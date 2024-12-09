@@ -13,4 +13,4 @@ const App = () => {
   return <h1>{message}</h1>; // Display the message from backend
 };
 
-export default App;
+export default App; // this is a check 
