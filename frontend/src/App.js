@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'; 
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
-import './App.css';
-import logo from './logo.svg';
+import Dashboard from './Components/Dashboard/Dashboard'; // Import the blank page component
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -16,9 +16,14 @@ const App = () => {
   }, []);
 
   return (
-    <div>
-      <LoginSignup/>
-    </div>
+    <Router>
+      <Routes>
+        {/* Route for Login/Signup */}
+        <Route path="/" element={<LoginSignup />} />
+        {/* Route for Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 };
 

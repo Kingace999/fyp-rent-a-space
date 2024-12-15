@@ -75,8 +75,16 @@
 
 .submit-container {
     display: flex;
-    gap: 30px;
-    margin: 60px auto;
+    flex-direction: column; /* Stack button groups vertically */
+    align-items: center;    /* Center align the container */
+    gap: 15px;              /* Space between button groups */
+    margin: 20px auto;      /* Add margin for spacing */
+}
+
+.button-row {
+    display: flex;          /* Keep buttons in a row */
+    justify-content: center; /* Center horizontally */
+    gap: 15px;              /* Add spacing between buttons */
 }
 
 .submit {
