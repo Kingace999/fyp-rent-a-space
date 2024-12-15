@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'; 
 import axios from 'axios';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
+import './App.css';
+import logo from './logo.svg';
 
 const App = () => {
   const [message, setMessage] = useState('');
