@@ -4,8 +4,9 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     height: 100vh;
-    background: linear-gradient(#2A00B7, #42006C);
+    background: white; /* Changed from gradient to white */
 }
+
 code {
     font-family: source-code-pro, Menlo, Monaco, monospace;
 }
