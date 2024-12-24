@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LoginSignup.css';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
-import axios from 'axios'; // Import axios for API calls
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 import user_icon from '../Assests/person.png';
 import password_icon from '../Assests/password.png';
@@ -15,47 +15,57 @@ const LoginSignup = () => {
   const [message, setMessage] = useState(''); // Feedback message for user (e.g., success/error)
   const [loading, setLoading] = useState(false); // Tracks loading state during API calls
 
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
-    setLoading(true); // Start loading
-    setMessage(''); // Clear previous messages
+    setLoading(true);
+    setMessage('');
 
     try {
       if (action === 'Sign Up') {
-        // Call the signup API
         const response = await axios.post('http://localhost:5000/auth/signup', {
           name,
           email,
           password,
         });
+
         setMessage(response.data.message); // Show success message
-        navigate('/dashboard'); // Redirect to Dashboard on success
+        const { token, user } = response.data;
+
+        // Store token in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        navigate('/dashboard'); // Redirect to Dashboard
       } else if (action === 'Login') {
-        // Call the login API
         const response = await axios.post('http://localhost:5000/auth/login', {
           email,
           password,
         });
-        setMessage(`Welcome, ${response.data.user.name}`); // Show welcome message
-        navigate('/dashboard'); // Redirect to Dashboard on success
+
+        setMessage(`Welcome, ${response.data.user.name}`);
+        const { token, user } = response.data;
+
+        // Store token in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        navigate('/dashboard'); // Redirect to Dashboard
       }
     } catch (error) {
-      // Handle error and show appropriate message
       setMessage(error.response?.data?.message || 'An error occurred.');
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
   return (
-    <div className='container'>
+    <div className="container">
       <div className="header">
         <div className="text">{action}</div>
         <div className="underline"></div>
       </div>
       <div className="inputs">
-        {/* Show Name input only for Sign Up */}
         {action === "Sign Up" && (
           <div className="input">
             <img src={user_icon} alt="User Icon" />
@@ -86,9 +96,7 @@ const LoginSignup = () => {
           />
         </div>
       </div>
-      {/* Feedback message */}
       {message && <div className="message">{message}</div>}
-      {/* Forgot password for Login */}
       {action === "Login" && (
         <div className="forgot-password">
           Lost Password? <span>Click Here!</span>

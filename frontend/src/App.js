@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
-import Dashboard from './Components/Dashboard/Dashboard'; // Import the blank page component
+import Dashboard from './Components/Dashboard/Dashboard';
+import Profile from './Components/Profile/Profile'; // Import the new Profile component
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -22,6 +23,8 @@ const App = () => {
         <Route path="/" element={<LoginSignup />} />
         {/* Route for Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
+        {/* Route for Profile */}
+        <Route path="/profile" element={<Profile />} /> {/* Add Profile route */}
       </Routes>
     </Router>
   );
