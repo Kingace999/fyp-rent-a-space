@@ -3,6 +3,8 @@ const router = express.Router();
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const authenticateToken = require('../middleware/authenticateToken'); // Import the middleware
+
 const SECRET_KEY = process.env.SECRET_KEY || 'verysecretkey'; // Use environment variable for security
 
 // PostgreSQL pool
@@ -78,20 +80,6 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-// Middleware to authenticate token
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.sendStatus(401);
-
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-};
 
 // Route for user profile (protected)
 router.get('/user/profile', authenticateToken, async (req, res) => {

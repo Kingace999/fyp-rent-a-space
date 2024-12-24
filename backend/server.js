@@ -1,15 +1,18 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const authenticateToken = require('./middleware/authenticateToken'); // Import the authenticate middleware
+const authRoutes = require('./routes/authRoutes'); // Auth routes
+const profileRoutes = require('./routes/profileRoutes'); // Profile routes
 
+// Initialize the app
 const app = express();
 const PORT = 5000;
 
-// Import authRoutes
-const authRoutes = require('./routes/authRoutes'); // Ensure the correct path to your authRoutes.js file
-
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json()); // Extra safeguard for JSON
 
 // Test Route for Frontend Connection
 app.get('/', (req, res) => {
@@ -18,11 +21,10 @@ app.get('/', (req, res) => {
 
 // PostgreSQL Database Configuration
 const { Pool } = require('pg');
-
 const pool = new Pool({
-    user: 'postgres', 
+    user: 'postgres',
     host: 'localhost',
-    database: 'fyp_rent_a_space', // database  name from psql
+    database: 'fyp_rent_a_space', // database name from psql
     password: 'kingace999', // psql password
     port: 5432,
 });
@@ -36,11 +38,9 @@ pool.query('SELECT NOW()', (err, res) => {
     }
 });
 
-app.use(bodyParser.json());
-app.use(express.json()); // Extra safeguard for JSON
-
-// Use authRoutes
-app.use('/auth', authRoutes); // All routes in authRoutes.js will be prefixed with /auth
+// Routes
+app.use('/auth', authRoutes); // Auth-related routes
+app.use('/profile', authenticateToken, profileRoutes); // Profile-related routes
 
 // Start Server
 app.listen(PORT, () => {
