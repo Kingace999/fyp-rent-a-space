@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Edit, MapPin, Calendar, Phone, Mail, Home, Save, X } from 'lucide-react';
 import './Profile.css';
 import axios from 'axios';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
   const [userData, setUserData] = useState({
     name: "",
     location: "",
@@ -13,8 +15,11 @@ const Profile = () => {
     email: "",
     address: "",
     bio: "",
-    hobbies: [] // Initialize as empty array
+    hobbies: [],
+    profile_image_url: ""
   });
+
+  const BACKEND_URL = 'http://localhost:5000';
 
   // Fetch profile data from the backend
   useEffect(() => {
@@ -46,6 +51,51 @@ const Profile = () => {
 
     fetchUserProfile();
   }, []);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadError('');
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please select a valid image file (JPEG, JPG, or PNG)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File size must be less than 5MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/profile/upload-image',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      setUserData(prev => ({
+        ...prev,
+        profile_image_url: response.data.imageUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setUploadError('Failed to upload image. Please try again.');
+    }
+  };
 
   // Handle input changes for editing
   const handleInputChange = (e, field) => {
@@ -103,11 +153,28 @@ const Profile = () => {
         <div className="profile-header">
           <div className="profile-image-container">
             <div className="profile-image">
-              <img src="/api/placeholder/128/128" alt="Profile" />
+              <img 
+  src={userData.profile_image_url ? `${BACKEND_URL}${userData.profile_image_url}` : "/api/placeholder/128/128"} 
+  alt="Profile" 
+  className="profile-img"
+/>
             </div>
-            <button className="camera-button">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/jpeg,image/jpg,image/png"
+              style={{ display: 'none' }}
+            />
+            <button 
+              className="camera-button"
+              onClick={() => fileInputRef.current.click()}
+            >
               <Camera className="h-4 w-4" />
             </button>
+            {uploadError && (
+              <div className="error-message">{uploadError}</div>
+            )}
           </div>
           
           <div className="profile-info">
