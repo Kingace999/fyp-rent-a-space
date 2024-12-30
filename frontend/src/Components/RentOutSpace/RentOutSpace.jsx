@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import './RentOutSpace.css'
+import LocationPicker from './LocationPicker';
+
 const RentOutSpace = () => {
   const [spaceDetails, setSpaceDetails] = useState({
-    title: '',
-    description: '',
-    type: '',
-    customType: '',
-    price: '',
-    priceType: 'hour',
-    capacity: '',
-    amenities: [],
-    customAmenities: [],
-    location: '',
-    availability: {
-      startDate: '',
-      endDate: '',
-    },
-  });
+  title: '',
+  description: '',
+  type: '',
+  customType: '',
+  price: '',
+  priceType: 'hour',
+  capacity: '',
+  amenities: [],
+  customAmenities: [],
+  location: '',
+  availability: {
+    startDate: '',
+    endDate: '',
+  },
+  coordinates: {
+    latitude: 51.505, // default coordinates
+    longitude: -0.09
+  }
+});
   const [images, setImages] = useState([]);
   const [message, setMessage] = useState(null);
   const [showCustomType, setShowCustomType] = useState(false);
@@ -419,25 +425,15 @@ const RentOutSpace = () => {
           </div>
         </div>
 
+       
         {/* Location */}
-        <div className="form-section">
-          <h2>Location</h2>
-          <div className="form-group">
-            <label>Address:</label>
-            <input
-              type="text"
-              name="location"
-              placeholder="Enter the full address"
-              value={spaceDetails.location}
-              onChange={handleInputChange}
-              className={getInputClassName('location')}
-              disabled={isSubmitting}
-              required
-            />
-            {errors.location && 
-              <span className="text-red-500 text-sm mt-1">{errors.location}</span>}
-          </div>
-        </div>
+        <LocationPicker 
+  spaceDetails={spaceDetails}
+  setSpaceDetails={setSpaceDetails}
+  isSubmitting={isSubmitting}
+  errors={errors}
+/>
+
 
         {/* Photo Upload */}
         <div className="form-section">
