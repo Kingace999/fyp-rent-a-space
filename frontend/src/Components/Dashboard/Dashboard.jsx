@@ -73,10 +73,15 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="logo">Rent-a-Space</div>
         <nav>
-          <a href="#" className="become-host">Rent out a space</a>
+          <button
+            className="become-host"
+            onClick={() => navigate('/rent-out-space')} // Navigate to the Rent Out a Space page
+          >
+            Rent out a space
+          </button>
           <button
             className="profile-btn"
-            onClick={() => navigate('/Profile')} // Navigate to the Profile page
+            onClick={() => navigate('/profile')} // Navigate to the Profile page
           >
             Profile
           </button>
@@ -170,55 +175,6 @@ const Dashboard = () => {
                   className="time-input"
                 />
               </div>
-            </div>
-          </div>
-
-          <div className="filter-row">
-            <div className="filter-group">
-              <Users className="filter-icon" size={20} />
-              <input
-                type="number"
-                placeholder="Min Capacity"
-                value={filters.minCapacity}
-                onChange={(e) => handleFilterChange('minCapacity', Number(e.target.value))}
-                min="0"
-                className="filter-select"
-              />
-            </div>
-
-            <div className="filter-group">
-              <MapPin className="filter-icon" size={20} />
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={filters.maxPrice}
-                onChange={(e) => handleFilterChange('maxPrice', Number(e.target.value))}
-                className="filter-select"
-              />
-              <span>${filters.maxPrice}/hr</span>
-            </div>
-          </div>
-
-          <div className="amenities-filter">
-            <label>Amenities:</label>
-            <div className="amenities-checkboxes">
-              {['WiFi', 'Parking', 'Whiteboard', 'Tables'].map((amenity) => (
-                <label key={amenity} className="amenity-checkbox">
-                  <input
-                    type="checkbox"
-                    value={amenity}
-                    checked={filters.amenities.includes(amenity)}
-                    onChange={(e) => {
-                      const updatedAmenities = e.target.checked
-                        ? [...filters.amenities, amenity]
-                        : filters.amenities.filter((a) => a !== amenity);
-                      handleFilterChange('amenities', updatedAmenities);
-                    }}
-                  />
-                  {amenity}
-                </label>
-              ))}
             </div>
           </div>
         </div>

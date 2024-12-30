@@ -3,7 +3,8 @@ import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
 import Dashboard from './Components/Dashboard/Dashboard';
-import Profile from './Components/Profile/Profile'; // Import the new Profile component
+import Profile from './Components/Profile/Profile';
+import RentOutSpace from './Components/RentOutSpace/RentOutSpace'; 
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -24,7 +25,9 @@ const App = () => {
         {/* Route for Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
         {/* Route for Profile */}
-        <Route path="/profile" element={<Profile />} /> {/* Add Profile route */}
+        <Route path="/profile" element={<Profile />} />
+        {/* Route for Rent Out a Space */}
+        <Route path="/rent-out-space" element={<RentOutSpace />} />
       </Routes>
     </Router>
   );

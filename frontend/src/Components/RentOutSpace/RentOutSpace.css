@@ -1,0 +1,437 @@
+.rent-out-space {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.rent-out-space h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+  font-size: 2.5rem;
+}
+
+h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.message {
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.rent-out-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.form-section {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #4a5568;
+}
+
+input,
+textarea,
+select {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* New validation styles */
+input.border-red-500,
+textarea.border-red-500,
+select.border-red-500 {
+  border-color: #f56565;
+}
+
+input.border-red-500:focus,
+textarea.border-red-500:focus,
+select.border-red-500:focus {
+  box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.1);
+}
+
+.text-red-500 {
+  color: #f56565;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Disabled state styles */
+input:disabled,
+textarea:disabled,
+select:disabled,
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #f7fafc;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.custom-input {
+  margin-top: 10px;
+}
+
+.price-input-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.price-input-group input {
+  flex: 1.5;
+  min-width: 100px;
+}
+
+.price-type-select {
+  flex: 1;
+  min-width: 120px;
+  width: auto;
+  white-space: nowrap;
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f7fafc;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.amenity-item:hover {
+  background: #edf2f7;
+}
+
+.amenity-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.amenity-item input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.custom-amenities {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.custom-amenity-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.custom-amenity-input input {
+  flex: 1;
+}
+
+.add-amenity-btn {
+  padding: 12px 24px;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-amenity-btn:not(:disabled):hover {
+  background-color: #3182ce;
+}
+
+.custom-amenities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.custom-amenity-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #edf2f7;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.remove-amenity {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: #a0aec0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.remove-amenity:not(:disabled):hover {
+  color: #e53e3e;
+  background: #fed7d7;
+}
+
+.upload-container {
+  position: relative;
+  padding: 30px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-container:not(.disabled):hover {
+  border-color: #4299e1;
+  background: #f7fafc;
+}
+
+.upload-container.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-input:disabled {
+  cursor: not-allowed;
+}
+
+.upload-text {
+  color: #4a5568;
+  font-size: 16px;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.image-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f7fafc;
+  border-radius: 6px;
+}
+
+.remove-image {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.remove-image:not(:disabled):hover {
+  background: #fed7d7;
+}
+
+.date-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+  padding: 0 5px;
+}
+
+.cancel-button {
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  margin-right: auto;
+}
+
+.cancel-button:not(:disabled):hover {
+  background-color: #cbd5e0;
+  color: #2d3748;
+}
+
+.submit-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.submit-button:not(:disabled):hover {
+  background-color: #3182ce;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .rent-out-space {
+    padding: 15px;
+  }
+
+  .rent-out-space h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+
+  .form-section {
+    padding: 20px;
+  }
+
+  .amenities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .price-input-group {
+    flex-direction: column;
+  }
+
+  .custom-amenity-input {
+    flex-direction: column;
+  }
+
+  .add-amenity-btn {
+    width: 100%;
+  }
+
+  .form-actions {
+    padding: 0;
+  }
+
+  .cancel-button,
+  .submit-button {
+    min-width: 90px;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
