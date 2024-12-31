@@ -6,6 +6,7 @@ const fs = require('fs');
 const authenticateToken = require('./middleware/authenticateToken');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const listingsRoutes = require('./routes/listingsRoutes'); // Import listingsRoutes
 
 // Initialize the app
 const app = express();
@@ -13,7 +14,7 @@ const PORT = 5000;
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)){
+if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
@@ -50,6 +51,7 @@ pool.query('SELECT NOW()', (err, res) => {
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', authenticateToken, profileRoutes);
+app.use('/listings', listingsRoutes); // Add listings routes
 
 // Start Server
 app.listen(PORT, () => {
