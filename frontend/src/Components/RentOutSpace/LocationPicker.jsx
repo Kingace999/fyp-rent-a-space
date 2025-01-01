@@ -27,22 +27,22 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
 
   const handleInputChange = (e) => {
     const value = e.target.value;
-    setSpaceDetails(prev => ({
+    setSpaceDetails((prev) => ({
       ...prev,
-      location: value
+      location: value,
     }));
     searchAddress(value);
   };
 
   const handleSuggestionClick = (suggestion) => {
     const [lng, lat] = suggestion.center;
-    setSpaceDetails(prev => ({
+    setSpaceDetails((prev) => ({
       ...prev,
       location: suggestion.place_name,
       coordinates: {
         latitude: lat,
-        longitude: lng
-      }
+        longitude: lng,
+      },
     }));
     setShowSuggestions(false);
   };
@@ -60,19 +60,26 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
 
       if (data.features && data.features.length > 0) {
         const address = data.features[0].place_name;
-        setSpaceDetails(prev => ({
+        setSpaceDetails((prev) => ({
           ...prev,
           location: address,
           coordinates: {
             latitude: lat,
-            longitude: lng
-          }
+            longitude: lng,
+          },
         }));
+
+        // Debugging: Log updated state
+        console.log('Updated coordinates:', { latitude: lat, longitude: lng });
+        console.log('Updated location:', address);
       }
     } catch (error) {
-      console.error('Error getting address:', error);
+      console.error('Error getting address from map click:', error);
     }
   }, [isSubmitting, setSpaceDetails]);
+
+  // Debugging: Log state updates
+  console.log('Current spaceDetails:', spaceDetails);
 
   return (
     <div className="form-section">
@@ -88,8 +95,8 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
             onChange={handleInputChange}
             className={`${errors.location ? 'border-red-500' : ''} ${
               isSubmitting ? 'opacity-50' : ''
-            } w-full p-2 border rounded-md min-h-[48px]`}  // increased height
-            style={{ minWidth: '500px' }} 
+            } w-full p-2 border rounded-md min-h-[48px]`}
+            style={{ minWidth: '500px' }}
             disabled={isSubmitting}
             required
           />
@@ -107,33 +114,34 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
             </div>
           )}
         </div>
-        {errors.location && 
-          <span className="text-red-500 text-sm mt-1">{errors.location}</span>}
+        {errors.location && (
+          <span className="text-red-500 text-sm mt-1">{errors.location}</span>
+        )}
       </div>
-      
+
       <div className="mt-4 relative">
         <Map
           mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
           initialViewState={{
             latitude: spaceDetails.coordinates.latitude,
             longitude: spaceDetails.coordinates.longitude,
-            zoom: 13
+            zoom: 13,
           }}
           style={{ width: '100%', height: '400px' }}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           onClick={handleMapClick}
           interactive={!isSubmitting}
         >
-          <Marker 
+          <Marker
             latitude={spaceDetails.coordinates.latitude}
             longitude={spaceDetails.coordinates.longitude}
             anchor="bottom"
           >
             <MapPin className="text-blue-500 w-8 h-8" />
           </Marker>
-          <GeolocateControl 
-            position="top-right" 
-            trackUserLocation={true} 
+          <GeolocateControl
+            position="top-right"
+            trackUserLocation={true}
             showAccuracyCircle={true}
           />
           <NavigationControl position="bottom-right" />

@@ -4,17 +4,37 @@ const createListing = async (req, res) => {
     try {
         const {
             title, description, type, customType, price, priceType, 
-            capacity, location, latitude, longitude,
-            amenities = [], customAmenities = [], startDate, endDate
+            capacity, location, latitude, longitude, startDate, endDate
         } = req.body;
 
-        // Input validation
-        if (!title || !description || !type || !price || !priceType || 
-            !capacity || !location || !latitude || !longitude || !startDate || !endDate) {
-            return res.status(400).json({ message: "Missing required fields" });
+        // Parse the JSON strings back into arrays
+        const parseJSONField = (field) => {
+            try {
+              return Array.isArray(field) ? field : JSON.parse(field || '[]');
+            } catch (e) {
+              return [];
+            }
+          };
+          
+          const amenities = parseJSONField(req.body.amenities);
+          const customAmenities = parseJSONField(req.body.customAmenities);
+          
+        
+        if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
+            return res.status(400).json({ message: "Invalid amenities format" });
         }
+        console.log('Received amenities:', amenities);
+        console.log('Received customAmenities:', customAmenities);
+
+
+        // Input validation
+        if (!title || !description || !type || !price || !location || !latitude || !longitude) {
+            return res.status(400).json({ message: "Missing required fields" });
+          }
 
         if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
+            console.log('Received amenities:', amenities);
+            console.log('Received customAmenities:', customAmenities);
             return res.status(400).json({ message: "Invalid amenities format" });
         }
 
@@ -22,7 +42,10 @@ const createListing = async (req, res) => {
             return res.status(400).json({ message: "Invalid price type" });
         }
 
-        if (price <= 0 || capacity <= 0) {
+        const parsedPrice = parseFloat(price);
+        const parsedCapacity = parseInt(capacity);
+
+        if (parsedPrice <= 0 || parsedCapacity <= 0) {
             return res.status(400).json({ message: "Price and capacity must be positive" });
         }
 
@@ -39,7 +62,7 @@ const createListing = async (req, res) => {
             RETURNING *`,
             [
                 userId, title, description, type, customType || null, 
-                price, priceType, capacity, location, latitude, longitude,
+                parsedPrice, priceType, parsedCapacity, location, latitude, longitude,
                 amenities, customAmenities,
                 startDate, endDate, imageUrls
             ]

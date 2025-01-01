@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import './RentOutSpace.css'
 import LocationPicker from './LocationPicker';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const RentOutSpace = () => {
+  const navigate = useNavigate();
   const [spaceDetails, setSpaceDetails] = useState({
   title: '',
   description: '',
@@ -30,6 +33,7 @@ const RentOutSpace = () => {
   const [newCustomAmenity, setNewCustomAmenity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  
 
   const spaceTypes = [
     'Garage',
@@ -184,57 +188,156 @@ const RentOutSpace = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 5) {
+    const totalImages = images.length + files.length;
+    
+    if (totalImages > 5) {
       setMessage({ type: 'error', text: 'Maximum 5 images allowed' });
       return;
     }
-    setImages((prev) => [...prev, ...files].slice(0, 5));
+  
+    const newImages = files.map(file => {
+      file.preview = URL.createObjectURL(file);
+      return file;
+    });
+  
+    setImages(prev => [...prev, ...newImages]);
   };
 
   const removeImage = (index) => {
+    URL.revokeObjectURL(images[index].preview);
     setImages(images.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    Object.keys(spaceDetails).forEach(key => {
-      if (key === 'availability') {
-        newErrors.startDate = validateField('startDate', spaceDetails.availability.startDate);
-        newErrors.endDate = validateField('endDate', spaceDetails.availability.endDate);
-      } else if (key !== 'amenities' && key !== 'customAmenities') {
-        newErrors[key] = validateField(key, spaceDetails[key]);
+    
+    // Validate required fields
+    if (!spaceDetails.title?.trim()) newErrors.title = 'Title is required';
+    if (!spaceDetails.description?.trim()) newErrors.description = 'Description is required';
+    if (!spaceDetails.type) newErrors.type = 'Space type is required';
+    if (spaceDetails.type === 'Other' && !spaceDetails.customType?.trim()) {
+      newErrors.customType = 'Custom type is required when "Other" is selected';
+    }
+    if (!spaceDetails.price || parseFloat(spaceDetails.price) <= 0) {
+      newErrors.price = 'Valid price is required';
+    }
+    if (!spaceDetails.capacity || parseInt(spaceDetails.capacity) <= 0) {
+      newErrors.capacity = 'Valid capacity is required';
+    }
+    if (!spaceDetails.location?.trim()) newErrors.location = 'Location is required';
+    if (!spaceDetails.availability.startDate) newErrors.startDate = 'Start date is required';
+    if (!spaceDetails.availability.endDate) newErrors.endDate = 'End date is required';
+  
+    // Additional validations
+    if (spaceDetails.availability.startDate && spaceDetails.availability.endDate) {
+      const start = new Date(spaceDetails.availability.startDate);
+      const end = new Date(spaceDetails.availability.endDate);
+      if (end < start) {
+        newErrors.endDate = 'End date must be after start date';
       }
-    });
-
+    }
+  
+    // Update errors state
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+  
+    // Show message if there are errors
+    if (Object.keys(newErrors).length > 0) {
+      const missingFields = Object.keys(newErrors).join(', ');
+      setMessage({
+        type: 'error',
+        text: `Please fix the following fields: ${missingFields}`
+      });
+      return false;
+    }
+  
+    return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      setMessage({ type: 'error', text: 'Please fix the errors before submitting' });
+// In the handleSubmit function (RentOutSpace.jsx)
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  if (!validateForm()) {
+    setIsSubmitting(false);
+    return;
+  }
+
+  const coordinates = {
+    latitude: spaceDetails.coordinates.latitude.toString(),
+    longitude: spaceDetails.coordinates.longitude.toString()
+  };
+
+  if (!coordinates.latitude || !coordinates.longitude) {
+    setMessage({ type: 'error', text: 'Please select a location on the map' });
+    setIsSubmitting(false);
+    return;
+  }
+
+  const requestData = {
+    title: spaceDetails.title,
+    description: spaceDetails.description,
+    type: spaceDetails.type,
+    customType: spaceDetails.customType,
+    price: spaceDetails.price,
+    priceType: spaceDetails.priceType,
+    capacity: spaceDetails.capacity,
+    location: spaceDetails.location,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
+    startDate: spaceDetails.availability.startDate,
+    endDate: spaceDetails.availability.endDate,
+    amenities: spaceDetails.amenities,
+    customAmenities: spaceDetails.customAmenities
+  };
+
+  const formData = new FormData();
+  Object.entries(requestData).forEach(([key, value]) => {
+    if (key === 'amenities' || key === 'customAmenities') {
+      formData.append(key, JSON.stringify(Array.isArray(value) ? value : []));
+    } else {
+      formData.append(key, value);
+    }
+  });
+
+  if (images && images.length > 0) {
+    images.forEach((image) => {
+      formData.append('images', image);
+    });
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setMessage({ type: 'error', text: 'Authentication token not found. Please log in again.' });
+      setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const finalSpaceType = spaceDetails.type === 'Other' ? spaceDetails.customType : spaceDetails.type;
-      const finalAmenities = [...spaceDetails.amenities, ...spaceDetails.customAmenities];
-      console.log('Space Details:', { ...spaceDetails, type: finalSpaceType, amenities: finalAmenities });
-      console.log('Uploaded Images:', images);
-      
-      setMessage({ type: 'success', text: 'Listing submitted successfully!' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to submit listing. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    const response = await axios.post('http://localhost:5000/listings', formData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    setMessage({ type: 'success', text: 'Listing created successfully!' });
+    setTimeout(() => navigate('/dashboard'), 1500);
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    setMessage({
+      type: 'error',
+      text: error.response?.data?.message || 'Failed to create listing. Please try again.'
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
+
+
+
 
   const getInputClassName = (fieldName) => {
     return `${errors[fieldName] ? 'border-red-500' : ''} ${isSubmitting ? 'opacity-50' : ''}`;
@@ -453,22 +556,31 @@ const RentOutSpace = () => {
               </div>
             </div>
             {images.length > 0 && (
-              <div className="image-preview-container">
-                {images.map((image, index) => (
-                  <div key={index} className="image-preview">
-                    <span>{image.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="remove-image"
-                      disabled={isSubmitting}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+  <div className="image-preview-container">
+    {images.length > 0 && (
+  <div className="image-preview-container">
+    {images.map((image, index) => (
+      <div key={index} className="image-preview relative flex items-center bg-gray-50 p-2 rounded">
+        <img 
+          src={image.preview} 
+          alt={`Preview ${index + 1}`} 
+          style={{ maxWidth: '100px', maxHeight: '100px', width: 'auto', height: 'auto' }}
+          className="object-contain rounded"
+        />
+        <button
+          type="button"
+          onClick={() => removeImage(index)}
+          className="remove-image absolute top-1 right-1"
+          disabled={isSubmitting}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+  </div>
+)}
           </div>
         </div>
 
@@ -511,10 +623,11 @@ const RentOutSpace = () => {
         </div>
 
         <div className="form-actions">
-          <button 
+        <button 
             type="button" 
             className="cancel-button"
             disabled={isSubmitting}
+            onClick={() => navigate('/dashboard')}
           >
             Cancel
           </button>

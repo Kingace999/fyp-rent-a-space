@@ -23,4 +23,5 @@ router.post('/', authenticateToken, handleUpload, createListing);
 router.get('/', getAllListings);
 router.get('/user', authenticateToken, getUserListings);
 
+
 module.exports = router;
