@@ -4,21 +4,20 @@ const createListing = async (req, res) => {
     try {
         const {
             title, description, type, customType, price, priceType, 
-            capacity, location, latitude, longitude, startDate, endDate
+            capacity, location, latitude, longitude, startDate, endDate,
+            available_start_time, available_end_time
         } = req.body;
 
-        // Parse the JSON strings back into arrays
         const parseJSONField = (field) => {
             try {
-              return Array.isArray(field) ? field : JSON.parse(field || '[]');
+                return Array.isArray(field) ? field : JSON.parse(field || '[]');
             } catch (e) {
-              return [];
+                return [];
             }
-          };
+        };
           
-          const amenities = parseJSONField(req.body.amenities);
-          const customAmenities = parseJSONField(req.body.customAmenities);
-          
+        const amenities = parseJSONField(req.body.amenities);
+        const customAmenities = parseJSONField(req.body.customAmenities);
         
         if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
             return res.status(400).json({ message: "Invalid amenities format" });
@@ -26,11 +25,9 @@ const createListing = async (req, res) => {
         console.log('Received amenities:', amenities);
         console.log('Received customAmenities:', customAmenities);
 
-
-        // Input validation
         if (!title || !description || !type || !price || !location || !latitude || !longitude) {
             return res.status(400).json({ message: "Missing required fields" });
-          }
+        }
 
         if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
             console.log('Received amenities:', amenities);
@@ -56,15 +53,15 @@ const createListing = async (req, res) => {
             `INSERT INTO listings 
             (user_id, title, description, type, custom_type, price, price_type,
              capacity, location, latitude, longitude, amenities, custom_amenities,
-             start_date, end_date, images)
+             start_date, end_date, available_start_time, available_end_time, images)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-                    $13, $14, $15, $16)
+                    $13, $14, $15, $16, $17, $18)
             RETURNING *`,
             [
                 userId, title, description, type, customType || null, 
                 parsedPrice, priceType, parsedCapacity, location, latitude, longitude,
-                amenities, customAmenities,
-                startDate, endDate, imageUrls
+                amenities, customAmenities, startDate, endDate,
+                available_start_time, available_end_time, imageUrls
             ]
         );
 
@@ -78,10 +75,8 @@ const createListing = async (req, res) => {
 const getAllListings = async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT l.*, u.username 
-            FROM listings l
-            JOIN users u ON l.user_id = u.id
-            ORDER BY l.created_at DESC;
+            SELECT * FROM listings
+            ORDER BY created_at DESC;
         `);
         res.status(200).json(result.rows);
     } catch (error) {

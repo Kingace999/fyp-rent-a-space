@@ -21,6 +21,8 @@ const RentOutSpace = () => {
   availability: {
     startDate: '',
     endDate: '',
+    available_start_time: '',
+    available_end_time: ''
   },
   coordinates: {
     latitude: 51.505, // default coordinates
@@ -287,6 +289,8 @@ const handleSubmit = async (e) => {
     longitude: coordinates.longitude,
     startDate: spaceDetails.availability.startDate,
     endDate: spaceDetails.availability.endDate,
+    available_start_time: spaceDetails.availability.available_start_time, 
+    available_end_time: spaceDetails.availability.available_end_time,   
     amenities: spaceDetails.amenities,
     customAmenities: spaceDetails.customAmenities
   };
@@ -313,6 +317,8 @@ const handleSubmit = async (e) => {
       setIsSubmitting(false);
       return;
     }
+
+    
 
     const response = await axios.post('http://localhost:5000/listings', formData, {
       headers: {
@@ -586,41 +592,69 @@ const handleSubmit = async (e) => {
 
         {/* Availability section with validation */}
         <div className="form-section">
-          <h2>Availability</h2>
-          <div className="date-inputs">
-            <div className="form-group">
-              <label>Start Date:</label>
-              <input
-                type="date"
-                name="startDate"
-                value={spaceDetails.availability.startDate}
-                onChange={handleDateChange}
-                className={getInputClassName('startDate')}
-                disabled={isSubmitting}
-                required
-                min={new Date().toISOString().split('T')[0]}
-              />
-              {errors.startDate && 
-                <span className="text-red-500 text-sm mt-1">{errors.startDate}</span>}
-            </div>
-            <div className="form-group">
-              <label>End Date:</label>
-              <input
-                type="date"
-                name="endDate"
-                value={spaceDetails.availability.endDate}
-                onChange={handleDateChange}
-                className={getInputClassName('endDate')}
-                disabled={isSubmitting}
-                required
-                min={spaceDetails.availability.startDate || 
-                     new Date().toISOString().split('T')[0]}
-              />
-              {errors.endDate && 
-                <span className="text-red-500 text-sm mt-1">{errors.endDate}</span>}
-            </div>
-          </div>
-        </div>
+ <h2>Availability</h2>
+ <div className="date-inputs">
+   <div className="form-group">
+     <label>Start Date:</label>
+     <input
+       type="date"
+       name="startDate"
+       value={spaceDetails.availability.startDate}
+       onChange={handleDateChange}
+       className={getInputClassName('startDate')}
+       disabled={isSubmitting}
+       required
+       min={new Date().toISOString().split('T')[0]}
+     />
+     {errors.startDate && 
+       <span className="text-red-500 text-sm mt-1">{errors.startDate}</span>}
+   </div>
+
+   <div className="form-group">
+     <label>End Date:</label>
+     <input
+       type="date"
+       name="endDate"
+       value={spaceDetails.availability.endDate}
+       onChange={handleDateChange}
+       className={getInputClassName('endDate')}
+       disabled={isSubmitting}
+       required
+       min={spaceDetails.availability.startDate || 
+            new Date().toISOString().split('T')[0]}
+     />
+     {errors.endDate && 
+       <span className="text-red-500 text-sm mt-1">{errors.endDate}</span>}
+   </div>
+
+   <div className="form-group">
+     <label>Available Times:</label>
+     <div className="time-inputs">
+       <input
+         type="time"
+         name="available_start_time"
+         value={spaceDetails.availability.available_start_time}
+         onChange={handleDateChange}
+         className={getInputClassName('available_start_time')}
+         disabled={isSubmitting}
+         required
+       />
+       <span>to</span>
+       <input
+         type="time"
+         name="available_end_time"
+         value={spaceDetails.availability.available_end_time}
+         onChange={handleDateChange}
+         className={getInputClassName('available_end_time')}
+         disabled={isSubmitting}
+         required
+       />
+       {errors.availableTime && 
+         <span className="text-red-500 text-sm mt-1">{errors.availableTime}</span>}
+     </div>
+   </div>
+ </div>
+</div>
 
         <div className="form-actions">
         <button 
