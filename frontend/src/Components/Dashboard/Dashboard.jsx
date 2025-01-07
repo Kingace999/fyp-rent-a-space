@@ -3,6 +3,7 @@ import { Search, MapPin, Calendar, Users, Heart, Eye, Clock, DollarSign, X } fro
 import './Dashboard.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import ActivitiesDropdown from './ActivitiesDropdown';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -186,7 +187,13 @@ const Dashboard = () => {
           >
             Profile
           </button>
-          <a href="#" className="my-bookings">My Bookings</a>
+          <ActivitiesDropdown 
+  onSelect={(option) => {
+    if (option === 'listings') {
+      navigate('/my-listings');  // Uses the same useNavigate hook like profile button
+    }
+  }} 
+/>
           <button
             className="logout-btn"
             onClick={() => {

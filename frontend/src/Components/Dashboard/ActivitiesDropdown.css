@@ -1,0 +1,48 @@
+.activities-dropdown {
+    position: relative;
+  }
+  
+  .activities-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4b5563;
+    transition: color 0.2s;
+  }
+  
+  .activities-button:hover {
+    color: #3b82f6;
+  }
+  
+  .chevron-icon {
+    transform: rotate(0deg);
+    transition: transform 0.2s;
+  }
+  
+  .chevron-icon.rotate {
+    transform: rotate(180deg);
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    margin-top: 8px;
+    width: 192px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 4px 0;
+    z-index: 50;
+  }
+  
+  .dropdown-item {
+    width: 100%;
+    padding: 8px 16px;
+    text-align: left;
+    color: #4b5563;
+    transition: background-color 0.2s;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f3f4f6;
+  }
