@@ -199,6 +199,31 @@ const updateListing = async (req, res) => {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
+
+  const getListing = async (req, res) => {
+    try {
+        const listingId = req.params.id;
+        const userId = req.user.userId; // Available from the auth middleware
+        
+        const result = await pool.query(
+            `SELECT l.*, u.name as owner_name
+            FROM listings l
+            JOIN users u ON l.user_id = u.id
+            WHERE l.id = $1`,
+            [listingId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Listing not found' });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching listing:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
   
 
-module.exports = { createListing, getAllListings, getUserListings, deleteListing, updateListing };
+module.exports = { createListing, getAllListings, getUserListings, deleteListing, updateListing, getListing };

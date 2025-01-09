@@ -3,8 +3,9 @@ const {
     createListing, 
     getAllListings, 
     getUserListings,
-    deleteListing,     // Add this
-    updateListing 
+    deleteListing,     
+    updateListing,
+    getListing 
 } = require('../controllers/listingsController');
 const authenticateToken = require('../middleware/authenticateToken');
 const upload = require('../middleware/uploadMiddleware');
@@ -26,5 +27,6 @@ router.get('/', getAllListings);
 router.get('/user', authenticateToken, getUserListings);
 router.delete('/:id', authenticateToken, deleteListing);
 router.put('/:id', authenticateToken, handleUpload, updateListing);
+router.get('/:id', authenticateToken, getListing); 
 
 module.exports = router;

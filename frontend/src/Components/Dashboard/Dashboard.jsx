@@ -362,15 +362,24 @@ const Dashboard = () => {
 
       <div className="results-grid">
         {filteredListings.map((listing) => (
-          <div key={listing.id} className="space-card">
+          <div 
+          key={listing.id} 
+          className="space-card"
+          onClick={() => navigate(`/listing/${listing.id}`)}
+          style={{ cursor: 'pointer' }}
+        >
             <div className="space-card-overlay">
               <button
                 className={`favorite-btn ${favorites.includes(listing.id) ? 'favorited' : ''}`}
-                onClick={() => toggleFavorite(listing.id)}
+                onClick={(e) => {
+                  e.stopPropagation();  // Add this
+                  toggleFavorite(listing.id);
+                }}
               >
                 <Heart size={16} />
               </button>
-              <button className="quick-view-btn">
+              <button className="quick-view-btn"
+              onClick={(e) => e.stopPropagation()}>
                 <Eye size={16} />
               </button>
             </div>

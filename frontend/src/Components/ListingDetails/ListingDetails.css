@@ -1,0 +1,450 @@
+/* Page Layout */
+.page-container {
+    min-height: 100vh;
+    background-color: #F9FAFB;
+  }
+  
+  /* Navigation Header */
+  .nav-header {
+    width: 100%;
+    background-color: white;
+    border-bottom: 1px solid #E5E7EB;
+    position: fixed;
+    top: 0;
+    z-index: 50;
+  }
+  
+  .nav-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2563EB;
+    cursor: pointer;
+  }
+  
+  .logo:hover {
+    color: #1D4ED8;
+  }
+  
+  .nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .rent-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #2563EB;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+  }
+  
+  .rent-button:hover {
+    color: #1D4ED8;
+    background-color: #EFF6FF;
+  }
+  
+  .profile-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4B5563;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+  }
+  
+  .profile-button:hover {
+    color: #1F2937;
+    background-color: #F3F4F6;
+  }
+  
+  .logout-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    background-color: #2563EB;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+  }
+  
+  .logout-button:hover {
+    background-color: #1D4ED8;
+  }
+  
+  /* Main Content */
+  .main-content {
+    padding-top: 5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 3rem;
+  }
+  
+  /* Back Button */
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    color: #4B5563;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  
+  .back-button:hover {
+    color: #1F2937;
+  }
+  
+  .back-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+  }
+  
+  /* Image Carousel */
+  .image-carousel {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    max-height: 600px;
+    background-color: #000;
+    margin-bottom: 2rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+  
+  .carousel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 9999px;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: white;
+    transition: background-color 0.2s;
+  }
+  
+  .carousel-button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .carousel-button.prev {
+    left: 1rem;
+  }
+  
+  .carousel-button.next {
+    right: 1rem;
+  }
+  
+  .carousel-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .carousel-dots {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .carousel-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s;
+  }
+  
+  .carousel-dot.active {
+    background-color: white;
+  }
+  
+  .no-image {
+    width: 100%;
+    height: 100%;
+    background-color: #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B7280;
+  }
+  
+  /* Content Layout */
+  .listing-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  
+  .listing-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+  }
+  
+  /* Main Content Area */
+  .listing-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .listing-header {
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 1.5rem;
+  }
+  
+  .listing-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 0.5rem;
+  }
+  
+  .listing-owner {
+    font-size: 1.125rem;
+    color: #6B7280;
+  }
+  
+  .listing-meta {
+    display: flex;
+    gap: 2rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4B5563;
+  }
+  
+  .meta-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  
+  /* Sections */
+  .section {
+    padding: 2rem 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1F2937;
+    margin-bottom: 1rem;
+  }
+  
+  .description-text {
+    color: #4B5563;
+    line-height: 1.75;
+    font-size: 1.125rem;
+  }
+  
+  .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .amenity-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #F3F4F6;
+    color: #4B5563;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  /* Sidebar Content */
+  .listing-sidebar {
+    position: sticky;
+    top: 6rem;
+    height: fit-content;
+    min-width: 380px; /* Added this */
+  }
+  
+  
+  .booking-card {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #E5E7EB;
+    position: relative;
+    overflow: visible;
+  }
+  .price-display {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1F2937;
+    margin-bottom: 1rem;
+  }
+  
+  .booking-placeholder {
+    color: #6B7280;
+    text-align: center;
+    padding: 2rem;
+    background-color: #F9FAFB;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+  }
+  
+  /* Loading, Error, and Not Found States */
+  .loading-container,
+  .error-container,
+  .not-found-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  
+  .loading-spinner {
+    width: 4rem;
+    height: 4rem;
+    border: 3px solid #E5E7EB;
+    border-top-color: #2563EB;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .error-message,
+  .not-found-message {
+    color: #DC2626;
+    font-size: 1.25rem;
+    text-align: center;
+    padding: 2rem;
+    background-color: #FEF2F2;
+    border-radius: 0.5rem;
+    border: 1px solid #FECACA;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .listing-content-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    
+    
+    .image-carousel {
+      height: 50vh;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .nav-content {
+      padding: 0 0.5rem;
+    }
+  
+    .nav-menu {
+      gap: 0.5rem;
+    }
+  
+    .rent-button,
+    .profile-button,
+    .logout-button {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+  
+    .listing-meta {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .listing-title {
+      font-size: 1.875rem;
+    }
+    
+    .image-carousel {
+      height: 40vh;
+    }
+    
+    .amenities-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+  }
+  
+  /* Print Styles */
+  @media print {
+    .nav-header {
+      position: static;
+      border-bottom: none;
+    }
+  
+    .main-content {
+      padding-top: 0;
+    }
+  
+    .back-button,
+    .carousel-button,
+    .carousel-dots,
+    .booking-section {
+      display: none;
+    }
+  
+    .listing-content-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  
+    .listing-main {
+      page-break-inside: avoid;
+    }
+  }
+  
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .loading-spinner {
+      animation: none;
+    }
+  
+    .carousel-button,
+    .logo,
+    .rent-button,
+    .profile-button,
+    .logout-button {
+      transition: none;
+    }
+  }

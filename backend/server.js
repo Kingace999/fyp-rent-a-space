@@ -6,7 +6,8 @@ const fs = require('fs');
 const authenticateToken = require('./middleware/authenticateToken');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
-const listingsRoutes = require('./routes/listingsRoutes'); // Import listingsRoutes
+const listingsRoutes = require('./routes/listingsRoutes');
+const bookingRoutes = require('./routes/bookingsRoutes');
 
 // Initialize the app
 const app = express();
@@ -52,6 +53,7 @@ pool.query('SELECT NOW()', (err, res) => {
 app.use('/auth', authRoutes);
 app.use('/profile', authenticateToken, profileRoutes);
 app.use('/listings', listingsRoutes); // Add listings routes
+app.use('/bookings', bookingRoutes);
 
 // Start Server
 app.listen(PORT, () => {
