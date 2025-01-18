@@ -3,7 +3,8 @@ const {
     createBooking,
     getUserBookings,
     getListingBookings,
-    deleteBooking
+    deleteBooking,
+    updateBooking
 } = require('../controllers/bookingsController');
 const authenticateToken = require('../middleware/authenticateToken');
 
@@ -20,5 +21,6 @@ router.get('/listing/:listing_id', authenticateToken, getListingBookings);
 
 // Cancel/delete a booking
 router.delete('/:id', authenticateToken, deleteBooking);
-
+// Update an existing booking
+router.put('/:id', authenticateToken, updateBooking); 
 module.exports = router;

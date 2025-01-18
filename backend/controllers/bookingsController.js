@@ -134,7 +134,7 @@ const getUserBookings = async (req, res) => {
              FROM bookings b
              JOIN listings l ON b.listing_id = l.id
              WHERE b.user_id = $1
-             ORDER BY b.booking_start DESC`,
+             ORDER BY b.created_at DESC`,  // Maintaining the same sort order
             [userId]
         );
         res.status(200).json(result.rows);
@@ -169,25 +169,218 @@ const deleteBooking = async (req, res) => {
 
         // Check if booking exists and belongs to user
         const booking = await pool.query(
-            'SELECT * FROM bookings WHERE id = $1 AND user_id = $2',
-            [bookingId, userId]
+            'SELECT * FROM bookings WHERE id = $1 AND user_id = $2 AND status = $3',
+            [bookingId, userId, 'active']
         );
 
         if (booking.rows.length === 0) {
-            return res.status(404).json({ message: 'Booking not found or unauthorized' });
+            return res.status(404).json({ 
+                message: 'Booking not found, unauthorized, or already cancelled' 
+            });
         }
 
-        await pool.query('DELETE FROM bookings WHERE id = $1', [bookingId]);
-        res.status(200).json({ message: 'Booking cancelled successfully' });
+        // Update the booking status to cancelled instead of deleting
+        await pool.query(
+            `UPDATE bookings 
+             SET status = $1, 
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2 AND user_id = $3`,
+            ['cancelled', bookingId, userId]
+        );
+
+        res.status(200).json({ 
+            message: 'Booking cancelled successfully',
+            bookingId: bookingId
+        });
     } catch (error) {
         console.error('Error cancelling booking:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
+const updateBooking = async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+        const userId = req.user.userId;
+        const { booking_start, booking_end } = req.body;
+
+        // Validate required fields
+        if (!booking_start || !booking_end) {
+            return res.status(400).json({
+                message: 'Both start and end times are required'
+            });
+        }
+
+        // Convert strings to Date objects and handle timezone
+        const bookingStart = new Date(booking_start);
+        const bookingEnd = new Date(booking_end);
+
+        // Set timezone to UTC explicitly
+        const utcBookingStart = new Date(Date.UTC(
+            bookingStart.getUTCFullYear(),
+            bookingStart.getUTCMonth(),
+            bookingStart.getUTCDate(),
+            bookingStart.getUTCHours(),
+            bookingStart.getUTCMinutes(),
+            0,
+            0
+        ));
+
+        const utcBookingEnd = new Date(Date.UTC(
+            bookingEnd.getUTCFullYear(),
+            bookingEnd.getUTCMonth(),
+            bookingEnd.getUTCDate(),
+            bookingEnd.getUTCHours(),
+            bookingEnd.getUTCMinutes(),
+            0,
+            0
+        ));
+
+        // Validate the dates
+        if (isNaN(bookingStart.getTime()) || isNaN(bookingEnd.getTime())) {
+            return res.status(400).json({
+                message: 'Invalid date/time format'
+            });
+        }
+
+        // Check if end time is after start time
+        if (bookingEnd <= bookingStart) {
+            return res.status(400).json({
+                message: 'End time must be after start time'
+            });
+        }
+
+        // Begin transaction
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            // Check if booking exists and belongs to user, and get listing details including available times
+            const existingBooking = await client.query(
+                `SELECT b.*, 
+                        l.price_type, 
+                        l.price, 
+                        l.available_start_time, 
+                        l.available_end_time,
+                        l.start_date,
+                        l.end_date
+                FROM bookings b 
+                JOIN listings l ON b.listing_id = l.id 
+                WHERE b.id = $1 AND b.user_id = $2`,
+                [bookingId, userId]
+            );
+
+            if (existingBooking.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ 
+                    message: 'Booking not found or unauthorized' 
+                });
+            }
+
+            const listing = existingBooking.rows[0];
+
+            // Validate against listing's available dates
+            const listingStartDate = new Date(listing.start_date);
+            const listingEndDate = new Date(listing.end_date);
+            
+            if (utcBookingStart < listingStartDate || utcBookingEnd > listingEndDate) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    message: 'Booking dates are outside of listing\'s available date range'
+                });
+            }
+
+            // For hourly bookings, validate against available hours
+            if (listing.price_type === 'hour') {
+                // Parse available times
+                const [availStartHour, availStartMin] = listing.available_start_time.split(':').map(Number);
+                const [availEndHour, availEndMin] = listing.available_end_time.split(':').map(Number);
+                
+                // Get booking hours and minutes
+                const bookingStartHour = utcBookingStart.getUTCHours();
+                const bookingStartMin = utcBookingStart.getUTCMinutes();
+                const bookingEndHour = utcBookingEnd.getUTCHours();
+                const bookingEndMin = utcBookingEnd.getUTCMinutes();
+
+                // Convert to minutes for easier comparison
+                const availStartMinutes = availStartHour * 60 + availStartMin;
+                const availEndMinutes = availEndHour * 60 + availEndMin;
+                const bookingStartMinutes = bookingStartHour * 60 + bookingStartMin;
+                const bookingEndMinutes = bookingEndHour * 60 + bookingEndMin;
+
+                if (bookingStartMinutes < availStartMinutes || bookingEndMinutes > availEndMinutes) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({
+                        message: `Booking times must be between ${listing.available_start_time} and ${listing.available_end_time}`
+                    });
+                }
+            }
+
+            // Check for conflicting bookings (excluding the current booking)
+            const conflictCheck = await client.query(
+                `SELECT id FROM bookings 
+                 WHERE listing_id = $1 
+                 AND id != $2
+                 AND booking_start < $4 
+                 AND booking_end > $3`,
+                [listing.listing_id, bookingId, bookingStart, bookingEnd]
+            );
+
+            if (conflictCheck.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return res.status(409).json({
+                    message: 'This time period is already booked'
+                });
+            }
+
+            // Calculate new total price based on duration and price type
+            let totalPrice;
+            if (listing.price_type === 'hour') {
+                const hours = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60));
+                totalPrice = hours * listing.price;
+            } else {
+                const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24));
+                totalPrice = days * listing.price;
+            }
+
+            // Update the booking
+            const result = await client.query(
+                `UPDATE bookings 
+                 SET booking_start = $1 AT TIME ZONE 'UTC', 
+                     booking_end = $2 AT TIME ZONE 'UTC', 
+                     total_price = $3,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $4 AND user_id = $5
+                 RETURNING *`,
+                [utcBookingStart, utcBookingEnd, totalPrice, bookingId, userId]
+            );
+
+            await client.query('COMMIT');
+            res.status(200).json({
+                message: 'Booking updated successfully',
+                booking: result.rows[0]
+            });
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+
+    } catch (error) {
+        console.error('Error updating booking:', error);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: error.message 
+        });
+    }
+};
+
 
 module.exports = {
     createBooking,
     getUserBookings,
     getListingBookings,
-    deleteBooking
+    deleteBooking,
+    updateBooking
 };

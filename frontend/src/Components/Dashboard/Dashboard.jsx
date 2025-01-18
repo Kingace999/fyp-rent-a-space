@@ -187,12 +187,14 @@ const Dashboard = () => {
           >
             Profile
           </button>
-          <ActivitiesDropdown 
+          <ActivitiesDropdown
   onSelect={(option) => {
     if (option === 'listings') {
-      navigate('/my-listings');  // Uses the same useNavigate hook like profile button
+      navigate('/my-listings');
+    } else if (option === 'bookings') {
+      navigate('/my-bookings');
     }
-  }} 
+  }}
 />
           <button
             className="logout-btn"

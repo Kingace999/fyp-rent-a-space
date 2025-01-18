@@ -7,6 +7,7 @@ import Profile from './Components/Profile/Profile';
 import RentOutSpace from './Components/RentOutSpace/RentOutSpace';
 import MyListings from './Components/MyListings/MyListings';
 import ListingDetails from './Components/ListingDetails/ListingDetails';
+import MyBookings from './Components/MyBookings/MyBookings';
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/rent-out-space" element={<RentOutSpace />} />
         <Route path="/my-listings" element={<MyListings />} />
         <Route path="/listing/:id" element={<ListingDetails />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
       </Routes>
     </Router>
   );
