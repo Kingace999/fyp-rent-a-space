@@ -127,20 +127,36 @@ const createBooking = async (req, res) => {
 };
 
 const getUserBookings = async (req, res) => {
+    const client = await pool.connect();
     try {
         const userId = req.user.userId;
-        const result = await pool.query(
+        
+        // First, update any bookings that should be completed
+        await client.query(
+            `UPDATE bookings 
+             SET status = 'completed', updated_at = CURRENT_TIMESTAMP 
+             WHERE user_id = $1 
+             AND status = 'active' 
+             AND booking_end < CURRENT_TIMESTAMP`,
+            [userId]
+        );
+
+        // Then fetch all bookings with their listing details
+        const result = await client.query(
             `SELECT b.*, l.title, l.location, l.images
              FROM bookings b
              JOIN listings l ON b.listing_id = l.id
              WHERE b.user_id = $1
-             ORDER BY b.created_at DESC`,  // Maintaining the same sort order
+             ORDER BY b.created_at DESC`,
             [userId]
         );
+
         res.status(200).json(result.rows);
     } catch (error) {
         console.error('Error fetching user bookings:', error);
         res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
 
@@ -151,6 +167,7 @@ const getListingBookings = async (req, res) => {
             `SELECT b.booking_start, b.booking_end
              FROM bookings b
              WHERE b.listing_id = $1
+             AND b.status = 'active'
              AND b.booking_end > NOW()
              ORDER BY b.booking_start`,
             [listing_id]
@@ -265,14 +282,14 @@ const updateBooking = async (req, res) => {
                         l.end_date
                 FROM bookings b 
                 JOIN listings l ON b.listing_id = l.id 
-                WHERE b.id = $1 AND b.user_id = $2`,
+                WHERE b.id = $1 AND b.user_id = $2 AND b.status = 'active'`,
                 [bookingId, userId]
             );
 
             if (existingBooking.rows.length === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ 
-                    message: 'Booking not found or unauthorized' 
+                    message: 'Booking not found, unauthorized, or not active' 
                 });
             }
 
@@ -291,17 +308,14 @@ const updateBooking = async (req, res) => {
 
             // For hourly bookings, validate against available hours
             if (listing.price_type === 'hour') {
-                // Parse available times
                 const [availStartHour, availStartMin] = listing.available_start_time.split(':').map(Number);
                 const [availEndHour, availEndMin] = listing.available_end_time.split(':').map(Number);
                 
-                // Get booking hours and minutes
                 const bookingStartHour = utcBookingStart.getUTCHours();
                 const bookingStartMin = utcBookingStart.getUTCMinutes();
                 const bookingEndHour = utcBookingEnd.getUTCHours();
                 const bookingEndMin = utcBookingEnd.getUTCMinutes();
 
-                // Convert to minutes for easier comparison
                 const availStartMinutes = availStartHour * 60 + availStartMin;
                 const availEndMinutes = availEndHour * 60 + availEndMin;
                 const bookingStartMinutes = bookingStartHour * 60 + bookingStartMin;
@@ -320,6 +334,7 @@ const updateBooking = async (req, res) => {
                 `SELECT id FROM bookings 
                  WHERE listing_id = $1 
                  AND id != $2
+                 AND status = 'active'
                  AND booking_start < $4 
                  AND booking_end > $3`,
                 [listing.listing_id, bookingId, bookingStart, bookingEnd]
@@ -349,7 +364,7 @@ const updateBooking = async (req, res) => {
                      booking_end = $2 AT TIME ZONE 'UTC', 
                      total_price = $3,
                      updated_at = CURRENT_TIMESTAMP
-                 WHERE id = $4 AND user_id = $5
+                 WHERE id = $4 AND user_id = $5 AND status = 'active'
                  RETURNING *`,
                 [utcBookingStart, utcBookingEnd, totalPrice, bookingId, userId]
             );

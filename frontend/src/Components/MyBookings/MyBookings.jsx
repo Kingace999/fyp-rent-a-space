@@ -6,6 +6,7 @@ import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import './MyBookings.css';
 import { BookingDetails, CancelBookingDialog } from './BookingModals';
 import UpdateBookingButton from './UpdateBookingButton';
+import LeaveReviewForm from '../Reviews/LeaveReviewForm';
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -19,7 +20,10 @@ const MyBookings = () => {
   const [bookingToCancel, setBookingToCancel] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [listings, setListings] = useState({}); // New state for listings
+  const [listings, setListings] = useState({});
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedListingForReview, setSelectedListingForReview] = useState(null);
+  const [userReviews, setUserReviews] = useState({}); // New state for tracking user reviews
   const navigate = useNavigate();
 
   // Initial bookings fetch
@@ -48,7 +52,29 @@ const MyBookings = () => {
     fetchBookings();
   }, [navigate]);
 
-  // New effect for fetching listing details
+  // New effect for fetching user reviews
+  useEffect(() => {
+    const fetchUserReviews = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await axios.get('http://localhost:5000/reviews/user', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Convert array of reviews to object for easier lookup
+        const reviewsMap = {};
+        response.data.forEach(review => {
+          reviewsMap[review.listing_id] = review;
+        });
+        setUserReviews(reviewsMap);
+      } catch (err) {
+        console.error('Error fetching user reviews:', err);
+      }
+    };
+
+    fetchUserReviews();
+  }, []);
+
+  // Effect for fetching listing details
   useEffect(() => {
     const fetchListingDetails = async (listingId) => {
       const token = localStorage.getItem('token');
@@ -65,7 +91,6 @@ const MyBookings = () => {
       }
     };
 
-    // Fetch listing details for each booking
     bookings.forEach(booking => {
       if (!listings[booking.listing_id]) {
         fetchListingDetails(booking.listing_id);
@@ -73,7 +98,7 @@ const MyBookings = () => {
     });
   }, [bookings]);
 
-  // Filtering and sorting effect
+  // Filtering and sorting effect (unchanged)
   useEffect(() => {
     let filtered = [...bookings];
 
@@ -162,7 +187,6 @@ const MyBookings = () => {
     }
   };
 
-  // New function to handle booking updates
   const handleBookingUpdate = async (updatedBooking) => {
     try {
       const response = await axios.get('http://localhost:5000/bookings/user', {
@@ -182,6 +206,47 @@ const MyBookings = () => {
   const handleCancelClick = (booking) => {
     setBookingToCancel(booking);
     setShowCancelDialog(true);
+  };
+
+  // Updated review handlers
+  const handleLeaveReview = (booking) => {
+    setSelectedListingForReview({
+      ...booking,
+      existingReview: userReviews[booking.listing_id]
+    });
+    setShowReviewForm(true);
+  };
+
+  const handleEditReview = (booking, existingReview) => {
+    setSelectedListingForReview({
+      ...booking,
+      existingReview
+    });
+    setShowReviewForm(true);
+  };
+
+  const refreshData = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      // Refresh bookings
+      const bookingsResponse = await axios.get('http://localhost:5000/bookings/user', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBookings(bookingsResponse.data);
+
+      // Refresh reviews
+      const reviewsResponse = await axios.get('http://localhost:5000/reviews/user', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const reviewsMap = {};
+      reviewsResponse.data.forEach(review => {
+        reviewsMap[review.listing_id] = review;
+      });
+      setUserReviews(reviewsMap);
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setError('Failed to refresh data.');
+    }
   };
 
   return (
@@ -258,6 +323,7 @@ const MyBookings = () => {
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
           </select>
           <select
             value={sortCriteria}
@@ -271,7 +337,7 @@ const MyBookings = () => {
         </div>
       </div>
 
-      {/* Bookings Section */}
+      {/* Bookings section with updated review button logic */}
       <div className="bookings-container">
         {loading ? (
           <p>Loading bookings...</p>
@@ -297,9 +363,7 @@ const MyBookings = () => {
               </div>
               <div className="booking-details">
                 <h3>{booking.title}</h3>
-                <p>
-                  <MapPin size={16} /> {booking.location}
-                </p>
+                <p><MapPin size={16} /> {booking.location}</p>
                 <p>
                   <Calendar size={16} /> Start:{' '}
                   {new Date(booking.booking_start).toLocaleString()}
@@ -339,6 +403,20 @@ const MyBookings = () => {
                       </button>
                     </>
                   )}
+                  {booking.status === 'completed' && (
+                    <button 
+                      className="review-btn"
+                      onClick={() => {
+                        if (userReviews[booking.listing_id]) {
+                          handleEditReview(booking, userReviews[booking.listing_id]);
+                        } else {
+                          handleLeaveReview(booking);
+                        }
+                      }}
+                    >
+                      {userReviews[booking.listing_id] ? 'Edit Review' : 'Leave Review'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -361,6 +439,21 @@ const MyBookings = () => {
             setShowCancelDialog(false);
             setBookingToCancel(null);
           }}
+        />
+      )}
+
+      {showReviewForm && selectedListingForReview && (
+        <LeaveReviewForm
+          isOpen={showReviewForm}
+          onClose={() => {
+            setShowReviewForm(false);
+            setSelectedListingForReview(null);
+            refreshData(); // Refresh both bookings and reviews after submission
+          }}
+          listingName={selectedListingForReview.title}
+          listingId={selectedListingForReview.listing_id}
+          bookingId={selectedListingForReview.id}
+          existingReview={selectedListingForReview.existingReview}
         />
       )}
 

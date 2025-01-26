@@ -331,6 +331,18 @@
 .cancel-booking-dialog {
     z-index: 1000;
 }
+.booking-status .status-indicator.completed {
+    color: #6366f1; /* or any color you prefer for completed status */
+}
+.actions .leave-review-btn {
+    background-color: #8B5CF6;
+    color: white;
+}
+
+.actions .leave-review-btn:hover {
+    background-color: #7C3AED;
+    transform: translateY(-2px);
+}
 
 /* Error Message */
 .error-message {

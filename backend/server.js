@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -8,6 +9,8 @@ const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const listingsRoutes = require('./routes/listingsRoutes');
 const bookingRoutes = require('./routes/bookingsRoutes');
+const reviewsRoutes = require('./routes/reviewsRoutes');
+const paymentRoutes = require('./routes/paymentRoutes'); // Added payment routes
 
 // Initialize the app
 const app = express();
@@ -19,10 +22,17 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Middleware
+// Middleware for Stripe webhooks
+app.use(
+    '/payments/webhook',
+    express.raw({ type: 'application/json' }) // Raw body parsing specifically for Stripe webhooks
+);
+
+// General Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Test Route for Frontend Connection
@@ -52,8 +62,10 @@ pool.query('SELECT NOW()', (err, res) => {
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', authenticateToken, profileRoutes);
-app.use('/listings', listingsRoutes); // Add listings routes
+app.use('/listings', listingsRoutes);
 app.use('/bookings', bookingRoutes);
+app.use('/reviews', reviewsRoutes);
+app.use('/payments', paymentRoutes); // Add payment routes
 
 // Start Server
 app.listen(PORT, () => {

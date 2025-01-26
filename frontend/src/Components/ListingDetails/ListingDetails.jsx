@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Users, Calendar, Clock, DollarSign,ChevronLeft,ChevronRight,ArrowLeft} from 'lucide-react';
+import { 
+  MapPin, 
+  Users, 
+  Calendar, 
+  Clock, 
+  DollarSign,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Star
+} from 'lucide-react';
 import './ListingDetails.css';
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import BookingForm from './BookingForm';
-
+import ReviewsList from '../Reviews/ReviewsList'; // Add this import
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -13,6 +23,9 @@ const ListingDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0); 
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -21,23 +34,42 @@ const ListingDetails = () => {
   useEffect(() => {
     const fetchListingDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/listings/${id}`, {
+        // First fetch listing details
+        const listingResponse = await fetch(`http://localhost:5000/listings/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
-        if (!response.ok) {
-          throw new Error('Failed to fetch');
+  
+        if (!listingResponse.ok) {
+          throw new Error('Failed to fetch listing');
         }
-        const data = await response.json();
-        setListing(data);
+  
+        const listingData = await listingResponse.json();
+        setListing(listingData);
+  
+        // Then fetch reviews data
+        try {
+          const reviewsResponse = await fetch(`http://localhost:5000/reviews/listing/${id}`);
+          if (reviewsResponse.ok) {
+            const reviewsData = await reviewsResponse.json();
+            setAverageRating(Number(reviewsData.averageRating) || 0);
+            setTotalReviews(Number(reviewsData.totalReviews) || 0);
+          }
+        } catch (reviewError) {
+          console.error('Error fetching reviews:', reviewError);
+          setAverageRating(0);
+          setTotalReviews(0);
+        }
+  
         setLoading(false);
       } catch (error) {
+        console.error('Error in fetchListingDetails:', error);
         setError('Failed to load listing details');
         setLoading(false);
       }
     };
-
+  
     fetchListingDetails();
   }, [id]);
 
@@ -167,9 +199,25 @@ const ListingDetails = () => {
             <div className="listing-main">
               <div className="listing-header">
                 <h1 className="listing-title">{listing.title}</h1>
-                {listing.owner_name && (
-                  <p className="listing-owner">Listed by {listing.owner_name}</p>
-                )}
+                <div className="listing-subtitle">
+                  {listing.owner_name && (
+                    <p className="listing-owner">Listed by {listing.owner_name}</p>
+                  )}
+<div className="rating-reviews">
+  <div className="rating-display">
+    <Star className="rating-star" />
+    <span className="rating-number">
+      {typeof averageRating === 'number' ? averageRating.toFixed(1) : '0.0'}
+    </span>
+  </div>
+  <button 
+    onClick={() => setIsReviewsModalOpen(true)}
+    className="see-reviews-button"
+  >
+    {totalReviews > 0 ? `See ${totalReviews} Reviews` : 'No Reviews Yet'}
+  </button>
+</div>
+                </div>
               </div>
 
               <div className="listing-meta">
@@ -217,6 +265,13 @@ const ListingDetails = () => {
           </div>
         </div>
       </main>
+
+      {/* Reviews Modal */}
+      <ReviewsList 
+        isOpen={isReviewsModalOpen}
+        onClose={() => setIsReviewsModalOpen(false)}
+        listingId={id}
+      />
     </div>
   );
 };
