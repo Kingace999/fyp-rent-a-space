@@ -180,24 +180,36 @@ const getListingBookings = async (req, res) => {
 };
 
 const deleteBooking = async (req, res) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+        
         const bookingId = req.params.id;
         const userId = req.user.userId;
 
-        // Check if booking exists and belongs to user
-        const booking = await pool.query(
-            'SELECT * FROM bookings WHERE id = $1 AND user_id = $2 AND status = $3',
-            [bookingId, userId, 'active']
+        // Check if booking exists and get its current status
+        const bookingResult = await client.query(
+            'SELECT * FROM bookings WHERE id = $1 AND user_id = $2',
+            [bookingId, userId]
         );
 
-        if (booking.rows.length === 0) {
+        if (bookingResult.rows.length === 0) {
             return res.status(404).json({ 
-                message: 'Booking not found, unauthorized, or already cancelled' 
+                message: 'Booking not found or unauthorized' 
             });
         }
 
-        // Update the booking status to cancelled instead of deleting
-        await pool.query(
+        const booking = bookingResult.rows[0];
+        
+        // Check if booking is already cancelled
+        if (booking.status === 'cancelled') {
+            return res.status(400).json({ 
+                message: 'Booking is already cancelled' 
+            });
+        }
+
+        // Update the booking status to cancelled
+        await client.query(
             `UPDATE bookings 
              SET status = $1, 
                  updated_at = CURRENT_TIMESTAMP
@@ -205,13 +217,17 @@ const deleteBooking = async (req, res) => {
             ['cancelled', bookingId, userId]
         );
 
+        await client.query('COMMIT');
         res.status(200).json({ 
             message: 'Booking cancelled successfully',
             bookingId: bookingId
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error cancelling booking:', error);
         res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
 const updateBooking = async (req, res) => {

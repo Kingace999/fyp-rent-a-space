@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Calendar, MapPin, DollarSign, X } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, X, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import './BookingsModal.css';
 
@@ -49,9 +49,9 @@ export const BookingDetails = ({ booking, onClose }) => {
             <div className="cancellation-policy">
               <h4>Cancellation Policy</h4>
               <ul>
-                <li>Full refund if cancelled 48 hours before</li>
-                <li>50% refund if cancelled 24 hours before</li>
-                <li>No refund for last-minute cancellations</li>
+                <li>100% refund if cancelled 7 days or more before the booking</li>
+                <li>50% refund if cancelled 3-7 days before the booking</li>
+                <li>No refund for cancellations less than 3 days before</li>
               </ul>
             </div>
           </div>
@@ -61,7 +61,28 @@ export const BookingDetails = ({ booking, onClose }) => {
   );
 };
 
-export const CancelBookingDialog = ({ onConfirm, onClose }) => {
+export const CancelBookingDialog = ({ booking, onConfirm, onClose }) => {
+  // Calculate refund amount based on time until booking
+  const calculateRefundInfo = () => {
+    if (!booking) return { percentage: 0, amount: 0 };
+    
+    const hoursUntilBooking = Math.ceil(
+      (new Date(booking.booking_start) - new Date()) / (1000 * 60 * 60)
+    );
+    
+    let refundPercentage = 0;
+    if (hoursUntilBooking >= 168) { // 7 days
+      refundPercentage = 100;
+    } else if (hoursUntilBooking >= 72) { // 3 days
+      refundPercentage = 50;
+    }
+    
+    const refundAmount = (booking.total_price * refundPercentage) / 100;
+    return { percentage: refundPercentage, amount: refundAmount };
+  };
+
+  const refundInfo = calculateRefundInfo();
+
   return (
     <Dialog.Root open={true} onOpenChange={onClose}>
       <Dialog.Portal>
@@ -77,21 +98,44 @@ export const CancelBookingDialog = ({ onConfirm, onClose }) => {
           </div>
 
           <div className="bookings-modal-body">
-            <p className="cancel-confirmation">Are you sure you want to cancel this booking?</p>
+            <div className="cancel-warning">
+              <AlertTriangle className="icon-warning" />
+              <p>Are you sure you want to cancel this booking?</p>
+            </div>
+
+            <div className="refund-summary">
+              <h4>Refund Summary</h4>
+              <div className="refund-details">
+                <p>Original Payment: {booking?.total_price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                <p>Refund Percentage: {refundInfo.percentage}%</p>
+                <p className="refund-amount">
+                  Refund Amount: {refundInfo.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                </p>
+              </div>
+            </div>
+
             <div className="cancellation-policy">
               <h4>Cancellation Policy</h4>
               <ul>
-                <li>Full refund if cancelled 48 hours before</li>
-                <li>50% refund if cancelled 24 hours before</li>
-                <li>No refund for last-minute cancellations</li>
+                <li>100% refund if cancelled 7 days or more before the booking</li>
+                <li>50% refund if cancelled 3-7 days before the booking</li>
+                <li>No refund for cancellations less than 3 days before</li>
               </ul>
             </div>
+
             <div className="cancel-actions">
               <Dialog.Close asChild>
                 <button className="keep-booking-btn">Keep Booking</button>
               </Dialog.Close>
-              <button onClick={onConfirm} className="confirm-cancel-btn">
-                Confirm Cancellation
+              <button 
+                onClick={onConfirm} 
+                className="confirm-cancel-btn"
+                disabled={refundInfo.percentage === 0}
+              >
+                {refundInfo.percentage > 0 
+                  ? `Cancel and Refund ${refundInfo.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`
+                  : 'Cancel Without Refund'
+                }
               </button>
             </div>
           </div>

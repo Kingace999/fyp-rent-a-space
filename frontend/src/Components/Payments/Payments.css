@@ -1,0 +1,31 @@
+.payments-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: white;
+  }
+  
+  .payment-error {
+    color: #dc3545;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    background-color: #f8d7da;
+  }
+  
+  .payment-loading {
+    text-align: center;
+    padding: 1rem;
+    color: #666;
+  }
+  
+  .payment-success {
+    color: #28a745;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+    background-color: #d4edda;
+    text-align: center;
+  }

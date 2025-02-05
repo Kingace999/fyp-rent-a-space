@@ -3,6 +3,8 @@ import DatePicker from 'react-datepicker';
 import { Calendar, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import './BookingForm.css';
+import Payments from '../Payments/Payments';
+
 
 const BookingForm = ({ listing, onSubmit }) => {
   const [startDate, setStartDate] = useState(null);
@@ -14,26 +16,31 @@ const BookingForm = ({ listing, onSubmit }) => {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [existingBookings, setExistingBookings] = useState([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+
+
+
+  const fetchExistingBookings = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/bookings/listing/${listing.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch existing bookings');
+      }
+      const bookings = await response.json();
+      setExistingBookings(bookings);
+    } catch (error) {
+      console.error('Error fetching existing bookings:', error);
+    }
+  };
+  
 
   // Fetch existing bookings for this listing
   useEffect(() => {
-    const fetchExistingBookings = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/bookings/listing/${listing.id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch existing bookings');
-        }
-        const bookings = await response.json();
-        setExistingBookings(bookings);
-      } catch (error) {
-        console.error('Error fetching existing bookings:', error);
-      }
-    };
-
     if (listing?.id) {
       fetchExistingBookings();
     }
@@ -328,76 +335,29 @@ const BookingForm = ({ listing, onSubmit }) => {
   const handleSubmit = async () => {
     setValidationMessage('');
     setBookingError(null);
-
-    // Validate based on booking type
+    setPaymentError(null);
+  
     const validation = listing.price_type === 'day' 
       ? validateDates()
       : { ...validateDates(), ...validateTimes() };
-
+  
     if (!validation.isValid) {
       setValidationMessage(validation.message);
       return;
     }
-
-    setIsSubmitting(true);
-
-    try {
-      // Format times for API if hourly booking
-      let formattedStartTime = null;
-      let formattedEndTime = null;
-      
-      if (listing.price_type === 'hour' && startTime && endTime) {
-        formattedStartTime = startTime.toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        formattedEndTime = endTime.toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-
-      const bookingData = {
-        listing_id: listing.id,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: listing.price_type === 'day' 
-          ? endDate.toISOString().split('T')[0]
-          : startDate.toISOString().split('T')[0],
-        startTime: formattedStartTime,
-        endTime: formattedEndTime,
-        total: calculateTotal,
-        priceType: listing.price_type
-      };
-
-      const response = await fetch('http://localhost:5000/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(bookingData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create booking');
-      }
-
-      const result = await response.json();
-      setBookingSuccess(true);
-      
-      // Optional: Notify parent component
-      if (onSubmit) {
-        onSubmit(result.booking);
-      }
-    } catch (error) {
-      setBookingError(error.message || 'Failed to create booking. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  
+    // Instead of creating booking here, just show payment form
+    setShowPayment(true);
   };
+
+
+
+
+
+
+
+
+
 
   if (!listing) {
     return <div className="booking-form-loading">Loading booking form...</div>;
@@ -444,7 +404,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                 inline
               />
             </div>
-  
+   
             <div className="date-picker-container">
               <h4 className="date-picker-title">Check-out Date</h4>
               <DatePicker
@@ -475,7 +435,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                 onChange={(date) => {
                   setStartDate(date);
                   setValidationMessage('');
-                  setStartTime(null); // Reset times when date changes
+                  setStartTime(null);
                   setEndTime(null);
                 }}
                 minDate={minDate}
@@ -487,7 +447,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                 inline
               />
             </div>
-  
+   
             {startDate && (
               <div className="time-selection-container">
                 <div className="time-picker-wrapper">
@@ -508,7 +468,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                     maxTime={availableEndTime}
                   />
                 </div>
-
+   
                 <div className="time-picker-wrapper">
                   <h4 className="time-picker-title">End Time</h4>
                   <DatePicker
@@ -532,7 +492,7 @@ const BookingForm = ({ listing, onSubmit }) => {
             )}
           </div>
         )}
-  
+   
         <div className="booking-summary">
           <h4 className="summary-title">Booking Summary</h4>
           <div className="summary-details">
@@ -562,7 +522,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                 </span>
               )}
             </div>
-  
+   
             {listing.price_type === 'hour' && (
               <div className="summary-time">
                 <Clock className="summary-icon" />
@@ -581,7 +541,7 @@ const BookingForm = ({ listing, onSubmit }) => {
                 </span>
               </div>
             )}
-  
+   
             <div className="summary-price">
               <p className="price-details">
                 <span className="base-price">${listing.price}/{listing.price_type}</span>
@@ -597,21 +557,21 @@ const BookingForm = ({ listing, onSubmit }) => {
               </p>
             </div>
           </div>
-
+   
           {validationMessage && (
             <div className="validation-message">
               <AlertCircle className="message-icon" />
               <p>{validationMessage}</p>
             </div>
           )}
-
+   
           {bookingError && (
             <div className="booking-error">
               <AlertCircle className="message-icon" />
               <p>{bookingError}</p>
             </div>
           )}
-  
+   
           <button
             onClick={handleSubmit}
             disabled={
@@ -630,7 +590,50 @@ const BookingForm = ({ listing, onSubmit }) => {
           </button>
         </div>
       </div>
-
+   
+      {showPayment && (
+  <div className="payment-overlay">
+    <div className="payment-modal">
+      <Payments 
+        amount={Number(calculateTotal) || 0}
+        listing={listing}
+        startDate={startDate}
+        endDate={endDate}
+        startTime={startTime}
+        endTime={endTime}
+        onPaymentStatusChange={(status, error) => {
+          if (status === 'succeeded') {
+            setBookingSuccess(true);
+            setShowPayment(false);
+            // Refresh the existing bookings list
+            if (listing?.id) {
+              fetchExistingBookings();
+            }
+          } else if (status === 'failed') {
+            const errorMessage = error || 'Payment failed. Please try again.';
+            setPaymentError(errorMessage);
+            setShowPayment(false);
+            // Hide error message after 3 seconds
+            setTimeout(() => {
+              setPaymentError(null);
+              // Reset payment form
+              setShowPayment(true);
+            }, 3000);
+          }
+        }}
+      />
+    </div>
+  </div>
+)}
+      {paymentError && !showPayment && (
+  <div className="payment-error-overlay">
+    <div className="payment-error-modal">
+      <AlertCircle className="error-icon" />
+      <p>{paymentError}</p>
+    </div>
+  </div>
+)}
+   
       {bookingSuccess && (
         <div className="booking-success-overlay">
           <div className="booking-success-modal">
@@ -677,7 +680,6 @@ const BookingForm = ({ listing, onSubmit }) => {
             <button 
               onClick={() => {
                 setBookingSuccess(false);
-                // Reset form
                 setStartDate(null);
                 setEndDate(null);
                 setStartTime(null);
@@ -691,7 +693,7 @@ const BookingForm = ({ listing, onSubmit }) => {
         </div>
       )}
     </div>
-  );
+);
 };
 
 export default BookingForm;

@@ -161,31 +161,36 @@ const MyBookings = () => {
     setFilteredBookings(filtered);
   }, [bookings, searchTerm, dateFilter, statusFilter, sortCriteria]);
 
-  const handleCancelBooking = async (bookingId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+// Replace this function
+const handleCancelBooking = async (bookingId) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate('/login');
+    return;
+  }
 
-    try {
-      await axios.delete(`http://localhost:5000/bookings/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  try {
+    // Update this line to match your backend route
+    const refundResponse = await axios.post(`http://localhost:5000/payments/refund/${bookingId}`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (refundResponse.data.refundId) {
       setBookings(prev => 
         prev.map(booking => 
           booking.id === bookingId 
-            ? { ...booking, status: 'cancelled' } 
+            ? { ...booking, status: 'cancelled', refund_amount: refundResponse.data.refundAmount } 
             : booking
         )
       );
       setShowCancelDialog(false);
       setBookingToCancel(null);
-    } catch (err) {
-      console.error('Error cancelling booking:', err);
-      setError('Failed to cancel booking.');
     }
-  };
+  } catch (err) {
+    console.error('Error processing refund:', err);
+    setError(err.response?.data?.message || 'Failed to process refund and cancel booking.');
+  }
+};
 
   const handleBookingUpdate = async (updatedBooking) => {
     try {
@@ -432,15 +437,16 @@ const MyBookings = () => {
         />
       )}
 
-      {showCancelDialog && bookingToCancel && (
-        <CancelBookingDialog
-          onConfirm={() => handleCancelBooking(bookingToCancel.id)}
-          onClose={() => {
-            setShowCancelDialog(false);
-            setBookingToCancel(null);
-          }}
-        />
-      )}
+{showCancelDialog && bookingToCancel && (
+  <CancelBookingDialog
+    booking={bookingToCancel}
+    onConfirm={() => handleCancelBooking(bookingToCancel.id)}
+    onClose={() => {
+      setShowCancelDialog(false);
+      setBookingToCancel(null);
+    }}
+  />
+)}
 
       {showReviewForm && selectedListingForReview && (
         <LeaveReviewForm
