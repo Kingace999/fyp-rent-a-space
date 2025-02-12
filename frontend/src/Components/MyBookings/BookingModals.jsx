@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';  // Added useState import
 import * as Dialog from '@radix-ui/react-dialog';
 import { Calendar, MapPin, DollarSign, X, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -40,8 +40,10 @@ export const BookingDetails = ({ booking, onClose }) => {
                 <span>{booking.total_price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
               </div>
               <div className="booking-status">
-                <span className={`status-badge ${new Date(booking.booking_end) < new Date() ? 'completed' : 'active'}`}>
-                  {new Date(booking.booking_end) < new Date() ? 'Completed' : 'Active'}
+                <span className={`status-badge ${booking.status}`}>
+                  {booking.status === 'pending_cancellation' 
+                    ? 'Cancellation in Progress'
+                    : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                 </span>
               </div>
             </div>
@@ -62,8 +64,11 @@ export const BookingDetails = ({ booking, onClose }) => {
 };
 
 export const CancelBookingDialog = ({ booking, onConfirm, onClose }) => {
-  // Calculate refund amount based on time until booking
+  const [isProcessing, setIsProcessing] = useState(false);  // Added state
+
   const calculateRefundInfo = () => {
+    if (!booking || booking.status === 'pending_cancellation') 
+      return { percentage: 0, amount: 0 };
     if (!booking) return { percentage: 0, amount: 0 };
     
     const hoursUntilBooking = Math.ceil(
@@ -71,17 +76,26 @@ export const CancelBookingDialog = ({ booking, onConfirm, onClose }) => {
     );
     
     let refundPercentage = 0;
-    if (hoursUntilBooking >= 168) { // 7 days
+    if (hoursUntilBooking >= 168) {
       refundPercentage = 100;
-    } else if (hoursUntilBooking >= 72) { // 3 days
+    } else if (hoursUntilBooking >= 72) {
       refundPercentage = 50;
     }
     
-    const refundAmount = (booking.total_price * refundPercentage) / 100;
+    const refundAmount = (booking.net_paid * refundPercentage) / 100;
     return { percentage: refundPercentage, amount: refundAmount };
   };
 
   const refundInfo = calculateRefundInfo();
+
+  const handleConfirm = async () => {
+    setIsProcessing(true);
+    try {
+      await onConfirm();
+    } catch (error) {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <Dialog.Root open={true} onOpenChange={onClose}>
@@ -106,7 +120,7 @@ export const CancelBookingDialog = ({ booking, onConfirm, onClose }) => {
             <div className="refund-summary">
               <h4>Refund Summary</h4>
               <div className="refund-details">
-                <p>Original Payment: {booking?.total_price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                <p>Total Paid: {(booking?.net_paid).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
                 <p>Refund Percentage: {refundInfo.percentage}%</p>
                 <p className="refund-amount">
                   Refund Amount: {refundInfo.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -128,13 +142,15 @@ export const CancelBookingDialog = ({ booking, onConfirm, onClose }) => {
                 <button className="keep-booking-btn">Keep Booking</button>
               </Dialog.Close>
               <button 
-                onClick={onConfirm} 
+                onClick={handleConfirm} 
                 className="confirm-cancel-btn"
-                disabled={refundInfo.percentage === 0}
+                disabled={refundInfo.percentage === 0 || isProcessing}
               >
-                {refundInfo.percentage > 0 
-                  ? `Cancel and Refund ${refundInfo.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`
-                  : 'Cancel Without Refund'
+                {isProcessing 
+                  ? 'Processing Cancellation...' 
+                  : refundInfo.percentage > 0 
+                    ? `Cancel and Refund ${refundInfo.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`
+                    : 'Cancel Without Refund'
                 }
               </button>
             </div>

@@ -36,7 +36,7 @@ const MyBookings = () => {
 
     const fetchBookings = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/bookings/user', {
+        const response = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBookings(response.data);
@@ -163,32 +163,55 @@ const MyBookings = () => {
 
 // Replace this function
 const handleCancelBooking = async (bookingId) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    navigate('/login');
-    return;
-  }
-
   try {
-    // Update this line to match your backend route
-    const refundResponse = await axios.post(`http://localhost:5000/payments/refund/${bookingId}`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (refundResponse.data.refundId) {
-      setBookings(prev => 
-        prev.map(booking => 
-          booking.id === bookingId 
-            ? { ...booking, status: 'cancelled', refund_amount: refundResponse.data.refundAmount } 
-            : booking
-        )
+      // Start cancellation
+      const response = await axios.post(
+          `http://localhost:5000/payments/refund/${bookingId}`,
+          {},
+          {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }
       );
-      setShowCancelDialog(false);
-      setBookingToCancel(null);
-    }
-  } catch (err) {
-    console.error('Error processing refund:', err);
-    setError(err.response?.data?.message || 'Failed to process refund and cancel booking.');
+
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds max
+
+      // Poll for status change
+      const checkStatus = async () => {
+          try {
+              const statusResponse = await axios.get(
+                  `http://localhost:5000/bookings/${bookingId}`,
+                  {
+                      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                  }
+              );
+              
+              if (statusResponse.data.status === 'cancelled') {
+                  setBookings(prev => prev.map(booking => 
+                      booking.id === bookingId ? statusResponse.data : booking
+                  ));
+                  setShowCancelDialog(false);
+                  setBookingToCancel(null);
+              } else if (statusResponse.data.status === 'pending_cancellation') {
+                  attempts++;
+                  if (attempts < maxAttempts) {
+                      setTimeout(checkStatus, 1000); // Poll every second
+                  } else {
+                      setError('Cancellation is taking longer than expected. Please check your bookings later.');
+                      setShowCancelDialog(false);
+                      setBookingToCancel(null);
+                  }
+              }
+          } catch (error) {
+              console.error('Error checking status:', error);
+              setError('Failed to check cancellation status.');
+          }
+      };
+      
+      checkStatus();
+  } catch (error) {
+      console.error('Error processing refund:', error);
+      setError('Cancellation failed. Please try again.');
   }
 };
 
@@ -234,7 +257,7 @@ const handleCancelBooking = async (bookingId) => {
     const token = localStorage.getItem('token');
     try {
       // Refresh bookings
-      const bookingsResponse = await axios.get('http://localhost:5000/bookings/user', {
+      const bookingsResponse = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBookings(bookingsResponse.data);
@@ -329,6 +352,7 @@ const handleCancelBooking = async (bookingId) => {
             <option value="active">Active</option>
             <option value="cancelled">Cancelled</option>
             <option value="completed">Completed</option>
+            <option value="pending_cancellation">Cancellation in Progress</option>
           </select>
           <select
             value={sortCriteria}
@@ -387,8 +411,10 @@ const handleCancelBooking = async (bookingId) => {
                 <p className="booking-status">
                   Status:{' '}
                   <span className={`status-indicator ${booking.status}`}>
-                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                  </span>
+  {booking.status === 'pending_cancellation' 
+    ? 'Cancellation in Progress'
+    : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+</span>
                 </p>
                 <div className="actions">
                   <button onClick={() => handleViewDetails(booking)}>

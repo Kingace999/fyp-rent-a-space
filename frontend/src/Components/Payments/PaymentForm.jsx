@@ -11,7 +11,9 @@ export default function PaymentForm({
   endTime,
   onPaymentStatusChange,
   setError,
-  setLoading
+  setLoading,
+  isUpdatePayment = false,
+  bookingId = null
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -44,17 +46,14 @@ export default function PaymentForm({
     setError(null);
 
     try {
-      // Create payment intent with booking details
-      const response = await fetch('http://localhost:5000/payments/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          amount: amount,
-          currency: 'usd',
-          listing_id: listing.id,
+      const endpoint = isUpdatePayment 
+        ? 'http://localhost:5000/payments/update-payment-intent'
+        : 'http://localhost:5000/payments/create-payment-intent';
+
+      const paymentData = isUpdatePayment 
+        ? {
+          bookingId,
+          additionalAmount: amount,
           startDate: startDate.toISOString().split('T')[0],
           endDate: endDate ? endDate.toISOString().split('T')[0] : startDate.toISOString().split('T')[0],
           startTime: startTime?.toLocaleTimeString('en-US', {
@@ -68,16 +67,63 @@ export default function PaymentForm({
             minute: '2-digit'
           }),
           priceType: listing.price_type
-        })
+        }
+        : {
+            amount: amount,
+            currency: 'usd',
+            listing_id: listing.id,
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate ? endDate.toISOString().split('T')[0] : startDate.toISOString().split('T')[0],
+            startTime: startTime?.toLocaleTimeString('en-US', {
+              hour12: false,
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            endTime: endTime?.toLocaleTimeString('en-US', {
+              hour12: false,
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            priceType: listing.price_type
+          };
+
+      console.log('Sending payment data:', paymentData);
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(paymentData)
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to create payment intent');
+      const responseText = await response.text();
+      
+      console.log('Payment intent response:', {
+        status: response.status,
+        text: responseText,
+        data: paymentData
+      });
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Response parsing error:', parseError);
+        throw new Error('Invalid server response');
       }
 
-      const { clientSecret } = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Payment intent creation failed');
+      }
 
+      const { clientSecret } = data;
+      if (!clientSecret) {
+        throw new Error('Missing client secret in response');
+      }
+
+      console.log('Confirming card payment...');
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: card,
@@ -96,24 +142,43 @@ export default function PaymentForm({
       });
 
       if (result.error) {
+        console.error('Payment confirmation error:', result.error);
         let errorMessage = result.error.message;
-        if (result.error.code === 'card_declined') {
-          errorMessage = 'Your card was declined. Please try a different card.';
-        } else if (result.error.code === 'expired_card') {
-          errorMessage = 'Your card has expired. Please try a different card.';
+        
+        switch (result.error.code) {
+          case 'card_declined':
+            errorMessage = 'Your card was declined. Please try a different card.';
+            break;
+          case 'expired_card':
+            errorMessage = 'Your card has expired. Please try a different card.';
+            break;
+          case 'incorrect_cvc':
+            errorMessage = 'Incorrect CVC code. Please check and try again.';
+            break;
+          case 'processing_error':
+            errorMessage = 'An error occurred while processing your card. Please try again.';
+            break;
+          default:
+            errorMessage = result.error.message || 'Payment failed. Please try again.';
         }
+        
         throw new Error(errorMessage);
       }
 
       if (result.paymentIntent.status === 'succeeded') {
+        console.log('Payment succeeded:', result.paymentIntent);
         card.clear();
         setIsFormComplete(false);
-        onPaymentStatusChange('succeeded');
+        
+        // Let the webhook handle the booking update
+        setTimeout(() => {
+          onPaymentStatusChange('succeeded');
+        }, 1000); // Small delay to ensure webhook processes first
       } else {
-        throw new Error('Payment failed. Please try again.');
+        throw new Error('Payment was not successful. Please try again.');
       }
     } catch (err) {
-      console.error('Payment error:', err);
+      console.error('Payment processing error:', err);
       setError(err.message);
       onPaymentStatusChange('failed', err.message);
     } finally {
@@ -134,7 +199,10 @@ export default function PaymentForm({
   return (
     <form className="payment-form" onSubmit={handleSubmit}>
       <div className="payment-details">
-        <h3>Payment Amount: ${parseFloat(amount).toFixed(2)}</h3>
+        <h3>
+          {isUpdatePayment ? 'Additional Payment Amount: ' : 'Payment Amount: '}
+          ${parseFloat(amount).toFixed(2)}
+        </h3>
       </div>
       <div className="form-row">
         <label htmlFor="card-element">Credit or debit card</label>

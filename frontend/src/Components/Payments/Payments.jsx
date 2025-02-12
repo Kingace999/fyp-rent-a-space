@@ -13,7 +13,9 @@ export default function Payments({
   endDate,
   startTime,
   endTime,
-  onPaymentStatusChange
+  onPaymentStatusChange,
+  isUpdatePayment = false,  // Added prop
+  bookingId = null         // Added prop
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -49,6 +51,8 @@ export default function Payments({
           onPaymentStatusChange={handlePaymentComplete}
           setError={setError}
           setLoading={setLoading}
+          isUpdatePayment={isUpdatePayment}  // Added prop
+          bookingId={bookingId}             // Added prop
         />
       </Elements>
     </div>

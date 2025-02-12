@@ -153,163 +153,216 @@ const handleWebhook = async (req, res) => {
 
             switch (event.type) {
                 case 'payment_intent.succeeded':
-   const paymentIntent = event.data.object;
-   const metadata = paymentIntent.metadata;
+    console.log('Processing payment_intent.succeeded webhook');
+    const paymentIntent = event.data.object;
+    const metadata = paymentIntent.metadata;
 
-   console.log('Received payment intent metadata:', metadata);
+    console.log('Received payment intent metadata:', metadata);
 
-   if (!metadata) {
-       throw new Error('Missing metadata in payment intent');
-   }
+    if (!metadata) {
+        throw new Error('Missing metadata in payment intent');
+    }
 
-   // Normalize metadata keys
-   if (metadata.bookingId && !metadata.booking_id) {
-       metadata.booking_id = metadata.bookingId;
-   }
+    // Normalize metadata keys
+    if (metadata.bookingId && !metadata.booking_id) {
+        metadata.booking_id = metadata.bookingId;
+    }
 
-   console.log('FULL METADATA:', JSON.stringify(metadata, null, 2));
-   console.log('Metadata Keys:', Object.keys(metadata));
-   console.log('Payment Intent ID:', paymentIntent.id);
+    console.log('FULL METADATA:', JSON.stringify(metadata, null, 2));
+    console.log('Payment Intent ID:', paymentIntent.id);
 
-   if (metadata.payment_purpose === 'update_additional') {
-       console.log('Processing update additional payment');
-       if (!metadata.booking_id || !metadata.amount) {
-           console.error('MISSING REQUIRED METADATA:', {
-               booking_id: metadata.booking_id,
-               amount: metadata.amount
-           });
-           throw new Error('Missing required metadata for update payment');
-       }
+    if (metadata.payment_purpose === 'update_additional') {
+        console.log('Processing update additional payment');
+        if (!metadata.booking_id || !metadata.amount) {
+            console.error('MISSING REQUIRED METADATA:', {
+                booking_id: metadata.booking_id,
+                amount: metadata.amount
+            });
+            throw new Error('Missing required metadata for update payment');
+        }
 
-       let updateQuery = '';
-       let queryParams = [];
+        let bookingStart, bookingEnd;
+        let updateQuery, queryParams;
 
-                        if (metadata.startDate) {
-                            let bookingStart, bookingEnd;
+        try {
+            console.log('Processing dates with metadata:', {
+                startDate: metadata.startDate,
+                endDate: metadata.endDate,
+                startTime: metadata.startTime,
+                endTime: metadata.endTime,
+                priceType: metadata.priceType
+            });
 
-                            try {
-                                if (metadata.priceType === 'hour' && metadata.startTime && metadata.endTime) {
-                                    bookingStart = new Date(`${metadata.startDate}T${metadata.startTime}`);
-                                    bookingEnd = new Date(`${metadata.startDate}T${metadata.endTime}`);
-                                } else {
-                                    bookingStart = new Date(`${metadata.startDate}T00:00:00`);
-                                    bookingEnd = new Date(`${metadata.endDate || metadata.startDate}T23:59:59`);
-                                }
+            if (metadata.priceType === 'hour' && metadata.startTime && metadata.endTime) {
+                // For hourly bookings
+                bookingStart = new Date(`${metadata.startDate}T${metadata.startTime}`);
+                bookingEnd = new Date(`${metadata.startDate}T${metadata.endTime}`);
+                
+                console.log('Hourly booking times:', {
+                    start: bookingStart.toISOString(),
+                    end: bookingEnd.toISOString()
+                });
+            } else {
+                // For daily bookings
+                bookingStart = new Date(`${metadata.startDate}T00:00:00`);
+                bookingEnd = new Date(`${metadata.endDate || metadata.startDate}T23:59:59`);
+            }
 
-                                if (isNaN(bookingStart.getTime()) || isNaN(bookingEnd.getTime())) {
-                                    throw new Error('Invalid date/time values');
-                                }
+            if (isNaN(bookingStart.getTime()) || isNaN(bookingEnd.getTime())) {
+                console.error('Invalid date/time values:', {
+                    bookingStart,
+                    bookingEnd,
+                    metadata
+                });
+                throw new Error('Invalid date/time values');
+            }
 
-                                updateQuery = `
-                                    UPDATE bookings 
-                                    SET booking_start = $1,
-                                        booking_end = $2,
-                                        total_price = total_price + $3,
-                                        status = 'active',
-                                        updated_at = CURRENT_TIMESTAMP
-                                    WHERE id = $4`;
-                                queryParams = [bookingStart, bookingEnd, parseFloat(metadata.amount), metadata.booking_id];
-                            } catch (error) {
-                                console.error('Error processing dates:', error);
-                                throw new Error('Failed to process booking dates');
-                            }
-                        } else {
-                            updateQuery = `
-                                UPDATE bookings 
-                                SET total_price = total_price + $1,
-                                    status = 'active',
-                                    updated_at = CURRENT_TIMESTAMP
-                                WHERE id = $2`;
-                            queryParams = [parseFloat(metadata.amount), metadata.booking_id];
-                        }
+            updateQuery = `
+                UPDATE bookings 
+                SET booking_start = $1,
+                    booking_end = $2,
+                    total_price = total_price + $3,
+                    status = 'active',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $4 
+                RETURNING *`;
+            queryParams = [bookingStart, bookingEnd, parseFloat(metadata.amount), metadata.booking_id];
 
-                        await client.query(updateQuery, queryParams);
+            const updateResult = await client.query(updateQuery, queryParams);
+            
+            console.log('Booking update result:', updateResult.rows[0]);
 
-                        // Record additional payment
-                        await client.query(
-                            `INSERT INTO payments 
-                            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                            [
-                                metadata.userId,
-                                metadata.booking_id,
-                                paymentIntent.id,
-                                parseFloat(metadata.amount),
-                                paymentIntent.currency,
-                                'succeeded',
-                                'additional_charge'
-                            ]
-                        );
+            // Record additional payment
+            await client.query(
+                `INSERT INTO payments 
+                (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING *`,
+                [
+                    metadata.userId,
+                    metadata.booking_id,
+                    paymentIntent.id,
+                    parseFloat(metadata.amount),
+                    paymentIntent.currency,
+                    'succeeded',
+                    'additional_charge'
+                ]
+            );
 
-                        console.log('Successfully processed update payment');
-                    } else {
-                        // Handle initial booking payment
-                        console.log('Processing initial booking payment');
-                        let bookingStart, bookingEnd;
-                        
-                        if (metadata.priceType === 'hour') {
-                            bookingStart = new Date(`${metadata.startDate}T${metadata.startTime}`);
-                            bookingEnd = new Date(`${metadata.startDate}T${metadata.endTime}`);
-                        } else {
-                            bookingStart = new Date(`${metadata.startDate}T00:00:00`);
-                            bookingEnd = new Date(`${metadata.endDate}T23:59:59`);
-                        }
+            console.log('Successfully processed update payment with times:', {
+                bookingStart: bookingStart.toISOString(),
+                bookingEnd: bookingEnd.toISOString(),
+                amount: metadata.amount
+            });
 
-                        const bookingResult = await client.query(
-                            `INSERT INTO bookings 
-                            (user_id, listing_id, booking_start, booking_end, 
-                             total_price, status, payment_status)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7)
-                            RETURNING id`,
-                            [
-                                metadata.userId,
-                                metadata.listing_id,
-                                bookingStart,
-                                bookingEnd,
-                                parseFloat(metadata.amount),
-                                'active',
-                                'paid'
-                            ]
-                        );
+        } catch (error) {
+            console.error('Error processing booking update:', error);
+            throw new Error('Failed to process booking update: ' + error.message);
+        }
+    } else {
+        // Handle initial booking payment
+        console.log('Processing initial booking payment');
+        let bookingStart, bookingEnd;
+        
+        if (metadata.priceType === 'hour') {
+            bookingStart = new Date(`${metadata.startDate}T${metadata.startTime}`);
+            bookingEnd = new Date(`${metadata.startDate}T${metadata.endTime}`);
+        } else {
+            bookingStart = new Date(`${metadata.startDate}T00:00:00`);
+            bookingEnd = new Date(`${metadata.endDate}T23:59:59`);
+        }
 
-                        const bookingId = bookingResult.rows[0].id;
+        const bookingResult = await client.query(
+            `INSERT INTO bookings 
+            (user_id, listing_id, booking_start, booking_end, 
+             total_price, status, payment_status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id`,
+            [
+                metadata.userId,
+                metadata.listing_id,
+                bookingStart,
+                bookingEnd,
+                parseFloat(metadata.amount),
+                'active',
+                'paid'
+            ]
+        );
 
-                        await client.query(
-                            `INSERT INTO payments 
-                            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                            [
-                                metadata.userId,
-                                bookingId,
-                                paymentIntent.id,
-                                parseFloat(metadata.amount),
-                                paymentIntent.currency,
-                                'succeeded',
-                                'payment'
-                            ]
-                        );
+        const bookingId = bookingResult.rows[0].id;
 
-                        console.log('Successfully processed initial booking payment');
-                    }
-                    break;
+        await client.query(
+            `INSERT INTO payments 
+            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+                metadata.userId,
+                bookingId,
+                paymentIntent.id,
+                parseFloat(metadata.amount),
+                paymentIntent.currency,
+                'succeeded',
+                'payment'
+            ]
+        );
 
-                case 'charge.refunded':
-                    const refund = event.data.object;
-                    const refundMetadata = refund.metadata;
-                    console.log('Processing refund:', refundMetadata);
+        console.log('Successfully processed initial booking payment');
+    }
+    break;
 
-                    if (refundMetadata.refundType === 'cancellation') {
-                        await client.query(
-                            `UPDATE bookings 
-                             SET status = 'cancelled',
-                                 cancelled_at = CURRENT_TIMESTAMP,
-                                 refund_amount = $1
-                             WHERE id = $2`,
-                            [parseFloat(refundMetadata.amount), refundMetadata.bookingId]
-                        );
-                        console.log('Successfully processed cancellation refund');
-                    }
-                    break;
+    case 'charge.refunded':
+        const charge = event.data.object;
+        // Get the refund information
+        const refunds = await stripe.refunds.list({
+            payment_intent: charge.payment_intent,
+            limit: 1
+        });
+        
+        if (refunds.data.length > 0) {
+            const refund = refunds.data[0];
+            const refundMetadata = refund.metadata;
+            console.log('Processing refund with metadata:', refundMetadata);
+    
+            if (refund.status === 'succeeded' && refundMetadata.refundType === 'cancellation') {
+                // First get the original payment
+                const originalPayment = await client.query(
+                    `SELECT id FROM payments 
+                     WHERE stripe_payment_id = $1 
+                     AND payment_type IN ('payment', 'additional_charge')`,
+                    [charge.payment_intent]
+                );
+    
+                if (originalPayment.rows.length > 0) {
+                    // Record the refund with original_payment_id
+                    await client.query(
+                        `INSERT INTO payments 
+                        (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type, original_payment_id)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                        [
+                            refundMetadata.userId,
+                            refundMetadata.bookingId,
+                            refund.id,
+                            parseFloat(refundMetadata.amount),
+                            'usd',
+                            'succeeded',
+                            'refund',
+                            originalPayment.rows[0].id
+                        ]
+                    );
+                }
+    
+                await client.query(
+                    `UPDATE bookings 
+                     SET status = 'cancelled',
+                         cancelled_at = CURRENT_TIMESTAMP,
+                         refund_amount = $1
+                     WHERE id = $2 AND status = 'pending_cancellation'`,
+                    [parseFloat(refundMetadata.amount), refundMetadata.bookingId]
+                );
+                console.log('Successfully processed cancellation refund');
+            }
+        }
+        break;
 
                 default:
                     console.log(`Unhandled event type: ${event.type}`);
@@ -335,107 +388,206 @@ const handleWebhook = async (req, res) => {
 const processBookingRefund = async (req, res) => {
     const client = await pool.connect();
     try {
+        console.log('Starting refund process for booking:', req.params.bookingId);
         await client.query('BEGIN');
         
         const { bookingId } = req.params;
         const userId = req.user.userId;
 
-        // Check booking status and get payment info
-        const bookingResult = await client.query(
-            `SELECT b.*, p.stripe_payment_id, p.id as payment_id, p.currency
-             FROM bookings b 
-             JOIN payments p ON b.id = p.booking_id 
-             WHERE b.id = $1 
-             AND b.user_id = $2 
-             AND p.payment_type = 'payment'`,
+        console.log('User ID:', userId, 'Booking ID:', bookingId);
+
+        // First check if we can get the booking
+        const bookingCheck = await client.query(
+            `SELECT * FROM bookings WHERE id = $1 AND user_id = $2`,
             [bookingId, userId]
         );
 
-        if (bookingResult.rows.length === 0) {
-            throw new Error('Booking not found or unauthorized');
+        console.log('Initial booking check:', bookingCheck.rows);
+
+        if (bookingCheck.rows.length === 0) {
+            throw new Error('Booking not found');
         }
 
-        const booking = bookingResult.rows[0];
+        const booking = bookingCheck.rows[0];
 
-        // Check if booking is already cancelled and refunded
-        if (booking.status === 'cancelled' && booking.refund_amount > 0) {
-            return res.status(400).json({ 
-                message: 'This booking has already been cancelled and refunded' 
-            });
+        // Check if booking can be cancelled
+        if (booking.status === 'cancelled') {
+            throw new Error('Booking is already cancelled');
         }
 
-        // Check if the booking is active
-        if (booking.status !== 'active') {
-            return res.status(400).json({ 
-                message: 'Only active bookings can be cancelled and refunded' 
-            });
-        }
-
-        // Calculate refund amount
-        const now = new Date();
-        const refundAmount = calculateRefundAmount(booking, now);
-
-        if (refundAmount <= 0) {
-            return res.status(400).json({ message: 'No refund available for this cancellation' });
-        }
-
-        // Process refund through Stripe
-        const refund = await stripe.refunds.create({
-            payment_intent: booking.stripe_payment_id,
-            amount: Math.round(refundAmount * 100),
-            metadata: {
-                userId: String(userId),
-                bookingId: String(bookingId),
-                refundType: 'cancellation',
-                amount: String(refundAmount),
-                originalPaymentId: String(booking.payment_id)
-            }
-        });
-
-        // Record refund payment
-        await client.query(
-            `INSERT INTO payments 
-            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type, original_payment_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
-                userId,
-                bookingId,
-                refund.id,
-                refundAmount,
-                booking.currency,
-                'succeeded',
-                'refund',
-                booking.payment_id
-            ]
+        // Get all payments and their current refund status
+        const paymentsResult = await client.query(
+            `WITH RECURSIVE payment_refunds AS (
+                SELECT 
+                    p.id,
+                    p.stripe_payment_id,
+                    p.amount as original_amount,
+                    p.payment_type,
+                    p.created_at,
+                    COALESCE((
+                        SELECT SUM(r.amount)
+                        FROM payments r
+                        WHERE r.original_payment_id = p.id
+                        AND r.payment_type = 'refund'
+                        AND r.status = 'succeeded'
+                    ), 0) as refunded_amount
+                FROM payments p
+                WHERE p.booking_id = $1
+                AND p.user_id = $2
+                AND p.payment_type IN ('payment', 'additional_charge')
+                AND p.status = 'succeeded'
+            )
+            SELECT 
+                id as payment_id,
+                stripe_payment_id,
+                original_amount,
+                refunded_amount,
+                (original_amount - refunded_amount) as refundable_amount,
+                payment_type
+            FROM payment_refunds
+            WHERE (original_amount - refunded_amount) > 0
+            ORDER BY created_at ASC`,
+            [bookingId, userId]
         );
 
-        // Update booking status and refund amount in a single query
+        console.log('Payment results:', paymentsResult.rows);
+
+        if (paymentsResult.rows.length === 0) {
+            throw new Error('No refundable payments found');
+        }
+
+        // Mark as pending cancellation
         await client.query(
             `UPDATE bookings 
-             SET status = 'cancelled', 
-                 cancelled_at = $1, 
-                 refund_amount = $2,
-                 updated_at = CURRENT_TIMESTAMP
-             WHERE id = $3`,
-            [now, refundAmount, bookingId]
+             SET status = 'pending_cancellation',
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = $1 AND user_id = $2`,
+            [bookingId, userId]
+        );
+
+        const refundIds = [];
+        let totalRefundAmount = 0;
+
+        // Process each payment that has a remaining refundable amount
+        for (const payment of paymentsResult.rows) {
+            try {
+                // First verify with Stripe
+                const stripePayment = await stripe.paymentIntents.retrieve(payment.stripe_payment_id);
+                console.log('Stripe payment details:', {
+                    stripeAmount: stripePayment.amount,
+                    stripeRefunded: stripePayment.amount_refunded,
+                    stripeStatus: stripePayment.status
+                });
+
+                // Calculate available amount in Stripe (converting from cents to dollars)
+                const stripeAvailableAmount = (stripePayment.amount - (stripePayment.amount_refunded || 0)) / 100;
+                
+                // Use the smaller amount between Stripe and database
+                const refundableAmount = Math.min(
+                    parseFloat(payment.refundable_amount),
+                    stripeAvailableAmount
+                );
+
+                console.log('Amount comparison:', {
+                    dbAmount: payment.refundable_amount,
+                    stripeAvailable: stripeAvailableAmount,
+                    finalRefundAmount: refundableAmount,
+                    paymentType: payment.payment_type,
+                    paymentId: payment.payment_id
+                });
+
+                if (refundableAmount <= 0) {
+                    console.log(`Skipping payment ${payment.payment_id} - no refundable amount`);
+                    continue;
+                }
+
+                // Create the refund with verified amount
+                const refund = await stripe.refunds.create({
+                    payment_intent: payment.stripe_payment_id,
+                    amount: Math.round(refundableAmount * 100),
+                    metadata: {
+                        userId: String(userId),
+                        bookingId: String(bookingId),
+                        refundType: 'cancellation',
+                        amount: String(refundableAmount),
+                        paymentId: String(payment.payment_id)
+                    }
+                });
+
+                console.log('Refund created:', refund.id);
+
+                // Record the refund in database with original_payment_id
+                const refundRecord = await client.query(
+                    `INSERT INTO payments 
+                    (user_id, booking_id, stripe_payment_id, amount, currency, status, 
+                     payment_type, original_payment_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    RETURNING id`,
+                    [
+                        userId,
+                        bookingId,
+                        refund.id,
+                        refundableAmount,
+                        'usd',
+                        'succeeded',
+                        'refund',
+                        payment.payment_id
+                    ]
+                );
+
+                refundIds.push(refund.id);
+                totalRefundAmount += refundableAmount;
+
+                console.log(`Refund recorded for payment ${payment.payment_id}:`, {
+                    refundId: refund.id,
+                    amount: refundableAmount,
+                    originalPaymentId: payment.payment_id
+                });
+
+            } catch (refundError) {
+                console.error(`Error processing refund for payment ${payment.payment_id}:`, refundError);
+                throw refundError;
+            }
+        }
+
+        // Update booking status and refund amount
+        await client.query(
+            `UPDATE bookings 
+             SET status = 'cancelled',
+             cancelled_at = CURRENT_TIMESTAMP,
+             refund_amount = COALESCE(refund_amount, 0) + $1,
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2`,
+            [totalRefundAmount, bookingId]
         );
 
         await client.query('COMMIT');
-        res.json({ 
-            message: 'Booking cancelled and refund processed successfully', 
-            refundAmount,
-            refundId: refund.id
+        
+        console.log('Refund process completed successfully:', {
+            bookingId,
+            totalRefundAmount,
+            refundIds
+        });
+
+        res.json({
+            message: 'Refund processed successfully',
+            totalRefundAmount,
+            refundIds
         });
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error processing refund:', error);
-        res.status(500).json({ message: error.message });
+        console.error('Detailed refund error:', error);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ 
+            message: error.message,
+            error: error.type === 'StripeInvalidRequestError' ? error.raw.message : error.message
+        });
     } finally {
         client.release();
     }
 };
-const processPartialRefund = async (req, res) => {
+ const processPartialRefund = async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -443,51 +595,59 @@ const processPartialRefund = async (req, res) => {
         const { bookingId, refundAmount, newStartDate, newEndDate } = req.body;
         const userId = req.user.userId;
 
+        // Get latest unrefunded payment
         const paymentResult = await client.query(
             `SELECT p.* 
              FROM payments p
              JOIN bookings b ON p.booking_id = b.id
-             WHERE b.id = $1 AND b.user_id = $2 AND p.payment_type = 'payment'`,
+             WHERE b.id = $1 
+             AND b.user_id = $2 
+             AND p.payment_type IN ('payment', 'additional_charge')
+             AND p.created_at > COALESCE(
+                 (SELECT MAX(created_at) 
+                  FROM payments 
+                  WHERE booking_id = $1 
+                  AND payment_type = 'refund'),
+                 '1970-01-01'
+             )
+             ORDER BY p.created_at DESC
+             LIMIT 1`,
             [bookingId, userId]
         );
 
         if (paymentResult.rows.length === 0) {
-            throw new Error('Original payment not found or unauthorized');
+            throw new Error('No unrefunded payment found');
         }
 
-        const originalPayment = paymentResult.rows[0];
+        const latestPayment = paymentResult.rows[0];
 
         const refund = await stripe.refunds.create({
-            payment_intent: originalPayment.stripe_payment_id,
+            payment_intent: latestPayment.stripe_payment_id,
             amount: Math.round(refundAmount * 100),
             metadata: {
                 userId: String(userId),
                 bookingId: String(bookingId),
                 refundType: 'partial',
-                amount: String(refundAmount),
-                originalPaymentId: String(originalPayment.id)
+                amount: String(refundAmount)
             }
         });
 
         await client.query(
             `INSERT INTO payments 
-            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type, original_payment_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            (user_id, booking_id, stripe_payment_id, amount, currency, status, payment_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
                 userId,
                 bookingId,
                 refund.id,
                 refundAmount,
-                originalPayment.currency,
+                latestPayment.currency,
                 'succeeded',
-                'refund',
-                originalPayment.id
+                'refund'
             ]
         );
 
-        // Update booking if new dates are provided
         if (newStartDate && newEndDate) {
-            // Validate dates before updating
             const startDateObj = new Date(newStartDate);
             const endDateObj = new Date(newEndDate);
             
@@ -521,7 +681,6 @@ const processPartialRefund = async (req, res) => {
         client.release();
     }
 };
-
 module.exports = {
     createPaymentIntent,
     handleWebhook,

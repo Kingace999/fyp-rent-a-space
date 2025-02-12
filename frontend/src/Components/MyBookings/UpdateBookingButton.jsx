@@ -5,6 +5,11 @@ import { Calendar, Clock, X, AlertCircle, CheckCircle2, AlertTriangle } from 'lu
 import axios from 'axios';
 import "react-datepicker/dist/react-datepicker.css";
 import './UpdateBookingButton.css';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import PaymentForm from '../Payments/PaymentForm'; 
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 // Booking modification rules
 const BOOKING_RULES = {
@@ -27,6 +32,8 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
   const [validationMessage, setValidationMessage] = useState('');
   const [open, setOpen] = useState(false);
   const [priceAdjustment, setPriceAdjustment] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
 
   // Store original booking dates for comparison
   const originalStartDate = useMemo(() => new Date(booking.booking_start), [booking.booking_start]);
@@ -464,38 +471,98 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
       return;
     }
 
+    // If there's a price increase, show payment form
+    if (priceAdjustment?.totalAdjustment > 0) {
+      setShowPayment(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const bookingData = {
-        booking_start: isHourly ? startTime.toISOString() : startDate.toISOString(),
-        booking_end: isHourly ? endTime.toISOString() : endDate.toISOString(),
-        total: calculateTotal,
-        price_adjustment: priceAdjustment?.totalAdjustment || 0
-      };
+      if (priceAdjustment?.totalAdjustment < 0) {
+        // Handle refund case
+        await axios.post(
+          'http://localhost:5000/payments/partial-refund',
+          {
+            bookingId: booking.id,
+            refundAmount: Math.abs(priceAdjustment.totalAdjustment),
+            newStartDate: isHourly ? startTime.toISOString() : startDate.toISOString(),
+            newEndDate: isHourly ? endTime.toISOString() : endDate.toISOString()
+          },
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }
+        );
 
-      const response = await axios.put(
-        `http://localhost:5000/bookings/${booking.id}`,
-        bookingData,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }
-      );
-
-      onUpdate(response.data);
-      setBookingSuccess(true);
-      
-      setTimeout(() => {
-        setBookingSuccess(false);
-        setOpen(false);
-      }, 2000);
+        // Wait a bit for the webhook to process
+        setTimeout(() => {
+          onUpdate();
+          setBookingSuccess(true);
+          
+          setTimeout(() => {
+            setBookingSuccess(false);
+            setOpen(false);
+          }, 2000);
+        }, 2000);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update booking');
+      setError(err.response?.data?.message || 'Failed to process refund');
     } finally {
       setLoading(false);
     }
-  };
+};
+const handlePaymentStatus = async (status, error) => {
+  if (status === 'succeeded') {
+    setLoading(true);
+    let attempts = 0;
+    const maxAttempts = 10;
 
+    const checkBookingStatus = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/bookings/${booking.id}`,
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }
+        );
+
+        if (response.data.status === 'active' && 
+            new Date(response.data.updated_at) > new Date(booking.updated_at)) {
+          // Booking has been updated
+          setBookingSuccess(true);
+          setShowPayment(false);
+          onUpdate();
+          
+          setTimeout(() => {
+            setBookingSuccess(false);
+            setOpen(false);
+          }, 2000);
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkBookingStatus, 1000);
+        } else {
+          setError('Update is taking longer than expected. Please check your bookings page.');
+          setLoading(false);
+        }
+      } catch (err) {
+        setError('Failed to confirm booking update. Please check your bookings page.');
+        setLoading(false);
+      }
+    };
+
+    checkBookingStatus();
+  } else {
+    setPaymentError(error || 'Payment failed');
+    setTimeout(() => {
+      setPaymentError(null);
+      setShowPayment(true);
+    }, 3000);
+  }
+};
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
@@ -822,6 +889,37 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
             ${Math.abs(priceAdjustment.totalAdjustment).toFixed(2)}
           </span>
         </div>
+      </div>
+    </div>
+  )}
+
+  {showPayment && (
+    <div className="payment-overlay">
+      <div className="payment-modal">
+        <Elements stripe={stripePromise}>
+          <PaymentForm
+            amount={priceAdjustment.totalAdjustment}
+            listing={listing}
+            startDate={startDate}
+            endDate={endDate}
+            startTime={startTime}
+            endTime={endTime}
+            bookingId={booking.id}
+            onPaymentStatusChange={handlePaymentStatus}
+            setError={setError}
+            setLoading={setLoading}
+            isUpdatePayment={true}
+          />
+        </Elements>
+      </div>
+    </div>
+  )}
+
+  {paymentError && !showPayment && (
+    <div className="payment-error-overlay">
+      <div className="payment-error-modal">
+        <AlertCircle className="error-icon" />
+        <p>{paymentError}</p>
       </div>
     </div>
   )}

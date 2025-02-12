@@ -679,6 +679,75 @@
         margin: 1rem;
         max-height: calc(100vh - 2rem);
     }
+}/* Payment Overlay Styles */
+.payment-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.payment-modal {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Payment Error Overlay Styles */
+.payment-error-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.payment-error-modal {
+    background-color: #FEF2F2;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid #FCA5A5;
+    color: #B91C1C;
+}
+
+.error-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    color: #DC2626;
+}
+
+/* Add responsive handling for payment components */
+@media (max-width: 640px) {
+    .payment-modal {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    .payment-error-modal {
+        width: 95%;
+        padding: 1rem;
+    }
 }
   
 /* Accessibility */

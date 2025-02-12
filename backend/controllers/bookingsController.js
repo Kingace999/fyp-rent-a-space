@@ -131,7 +131,6 @@ const getUserBookings = async (req, res) => {
     try {
         const userId = req.user.userId;
         
-        // First, update any bookings that should be completed
         await client.query(
             `UPDATE bookings 
              SET status = 'completed', updated_at = CURRENT_TIMESTAMP 
@@ -141,9 +140,15 @@ const getUserBookings = async (req, res) => {
             [userId]
         );
 
-        // Then fetch all bookings with their listing details
         const result = await client.query(
-            `SELECT b.*, l.title, l.location, l.images
+            `SELECT b.*, 
+                l.title, 
+                l.location, 
+                l.images,
+                (SELECT SUM(CASE 
+                    WHEN payment_type IN ('payment', 'additional_charge') THEN amount 
+                    WHEN payment_type = 'refund' THEN -amount 
+                END) FROM payments WHERE booking_id = b.id) as net_paid
              FROM bookings b
              JOIN listings l ON b.listing_id = l.id
              WHERE b.user_id = $1
@@ -407,11 +412,37 @@ const updateBooking = async (req, res) => {
     }
 };
 
+const getBooking = async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+        const userId = req.user.userId;
 
+        const result = await pool.query(
+            `SELECT b.*, 
+                (SELECT SUM(CASE 
+                    WHEN payment_type IN ('payment', 'additional_charge') THEN amount 
+                    WHEN payment_type = 'refund' THEN -amount 
+                END) FROM payments WHERE booking_id = b.id) as net_paid
+             FROM bookings b
+             WHERE b.id = $1 AND b.user_id = $2`,
+            [bookingId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching booking:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 module.exports = {
     createBooking,
     getUserBookings,
     getListingBookings,
     deleteBooking,
-    updateBooking
+    updateBooking,
+    getBooking
 };
