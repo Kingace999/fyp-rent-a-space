@@ -193,6 +193,8 @@ const Dashboard = () => {
       navigate('/my-listings');
     } else if (option === 'bookings') {
       navigate('/my-bookings');
+    } else if (option === 'notifications') {
+      navigate('/notifications'); // This ensures navigation works for notifications
     }
   }}
 />

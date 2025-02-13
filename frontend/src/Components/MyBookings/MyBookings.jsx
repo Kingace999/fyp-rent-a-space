@@ -36,13 +36,15 @@ const MyBookings = () => {
 
     const fetchBookings = async () => {
       try {
+        console.log('Starting to fetch bookings...');
         const response = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log('Bookings data received:', response.data);
         setBookings(response.data);
         setFilteredBookings(response.data);
       } catch (err) {
-        console.error('Error fetching bookings:', err);
+        console.error('Error details:', err.response?.data || err.message);
         setError('Failed to load bookings.');
       } finally {
         setLoading(false);
@@ -295,14 +297,16 @@ const handleCancelBooking = async (bookingId) => {
             Profile
           </button>
           <ActivitiesDropdown
-            onSelect={(option) => {
-              if (option === 'listings') {
-                navigate('/my-listings');
-              } else if (option === 'bookings') {
-                navigate('/my-bookings');
-              }
-            }}
-          />
+  onSelect={(option) => {
+    if (option === 'listings') {
+      navigate('/my-listings');
+    } else if (option === 'bookings') {
+      navigate('/my-bookings');
+    } else if (option === 'notifications') {
+      navigate('/notifications'); // This ensures navigation works for notifications
+    }
+  }}
+/>
           <button
             className="logout-btn"
             onClick={() => {

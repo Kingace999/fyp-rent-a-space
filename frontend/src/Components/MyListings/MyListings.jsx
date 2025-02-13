@@ -462,12 +462,16 @@ const handleSave = async () => {
             Profile
           </button>
           <ActivitiesDropdown
-            onSelect={(option) => {
-              if (option === 'listings') {
-                navigate('/my-listings');
-              }
-            }}
-          />
+  onSelect={(option) => {
+    if (option === 'listings') {
+      navigate('/my-listings');
+    } else if (option === 'bookings') {
+      navigate('/my-bookings');
+    } else if (option === 'notifications') {
+      navigate('/notifications'); // This ensures navigation works for notifications
+    }
+  }}
+/>
           <button
             className="logout-btn"
             onClick={() => {

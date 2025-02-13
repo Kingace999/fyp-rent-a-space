@@ -49,6 +49,12 @@ const ActivitiesDropdown = ({ onSelect }) => {
           >
             My Bookings
           </button>
+          <button
+            className="dropdown-item"
+            onClick={() => handleOptionClick('notifications')}
+          >
+            Notifications
+          </button>
         </div>
       )}
     </div>

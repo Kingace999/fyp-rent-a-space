@@ -131,6 +131,9 @@ const getUserBookings = async (req, res) => {
     try {
         const userId = req.user.userId;
         
+        console.log('Fetching bookings for user:', userId);
+
+        // Update completed bookings
         await client.query(
             `UPDATE bookings 
              SET status = 'completed', updated_at = CURRENT_TIMESTAMP 
@@ -140,21 +143,33 @@ const getUserBookings = async (req, res) => {
             [userId]
         );
 
+        // Modified query with better handling of listing data
         const result = await client.query(
-            `SELECT b.*, 
-                l.title, 
-                l.location, 
-                l.images,
-                (SELECT SUM(CASE 
-                    WHEN payment_type IN ('payment', 'additional_charge') THEN amount 
-                    WHEN payment_type = 'refund' THEN -amount 
-                END) FROM payments WHERE booking_id = b.id) as net_paid
-             FROM bookings b
-             JOIN listings l ON b.listing_id = l.id
-             WHERE b.user_id = $1
-             ORDER BY b.created_at DESC`,
+            `WITH user_bookings AS (
+                SELECT b.*, 
+                    COALESCE(
+                        (SELECT SUM(CASE 
+                            WHEN payment_type IN ('payment', 'additional_charge') THEN amount 
+                            WHEN payment_type = 'refund' THEN -amount 
+                        END) FROM payments WHERE booking_id = b.id), 
+                        0
+                    ) as net_paid
+                FROM bookings b
+                WHERE b.user_id = $1
+            )
+            SELECT 
+                ub.*,
+                l.title,
+                l.location,
+                l.images
+            FROM user_bookings ub
+            LEFT JOIN listings l ON ub.listing_id = l.id
+            ORDER BY ub.created_at DESC`,
             [userId]
         );
+
+        console.log('Found bookings:', result.rows.length);
+        console.log('Latest booking:', result.rows[0]);
 
         res.status(200).json(result.rows);
     } catch (error) {
