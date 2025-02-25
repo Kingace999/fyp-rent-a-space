@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const { createNotification } = require('../controllers/notificationsController');
+
 
 const createReview = async (req, res) => {
     const client = await pool.connect();
@@ -27,8 +29,25 @@ const createReview = async (req, res) => {
             });
         }
 
-        // Begin transaction
         await client.query('BEGIN');
+
+        // Get listing details first
+        const listingDetails = await client.query(
+            `SELECT l.*, u.name as host_name, u.id as host_id
+             FROM listings l 
+             JOIN users u ON l.user_id = u.id 
+             WHERE l.id = $1`,
+            [listing_id]
+        );
+
+        if (listingDetails.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                message: 'Listing not found'
+            });
+        }
+
+        const listing = listingDetails.rows[0];
 
         // Check if booking exists and is completed
         const bookingCheck = await client.query(
@@ -44,7 +63,7 @@ const createReview = async (req, res) => {
             });
         }
 
-        // Check if review already exists for this booking
+        // Check if review already exists
         const existingReview = await client.query(
             'SELECT * FROM reviews WHERE booking_id = $1',
             [booking_id]
@@ -58,7 +77,7 @@ const createReview = async (req, res) => {
         }
 
         // Create the review
-        const result = await client.query(
+        const reviewResult = await client.query(
             `INSERT INTO reviews 
              (user_id, listing_id, booking_id, rating, comment)
              VALUES ($1, $2, $3, $4, $5)
@@ -66,10 +85,34 @@ const createReview = async (req, res) => {
             [userId, listing_id, booking_id, rating, comment]
         );
 
+        // Get reviewer's name
+        const reviewerDetails = await client.query(
+            'SELECT name FROM users WHERE id = $1',
+            [userId]
+        );
+
+        const reviewerName = reviewerDetails.rows[0]?.name || 'A user';
+
+        // Create notification for the host
+        try {
+            await createNotification(
+                'review_new',  // Using the correct type from your check constraint
+                listing.host_id,
+                `${reviewerName} left a ${rating}-star review for your space "${listing.title}"`,
+                listing_id,
+                'New Review Received'
+            );
+        } catch (notificationError) {
+            console.error('Error creating notification:', notificationError);
+            // Log the full error for debugging
+            console.error('Full notification error:', notificationError);
+        }
+
         await client.query('COMMIT');
+        
         res.status(201).json({
             message: 'Review created successfully',
-            review: result.rows[0]
+            review: reviewResult.rows[0]
         });
 
     } catch (error) {

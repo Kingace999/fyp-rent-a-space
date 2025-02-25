@@ -14,7 +14,9 @@ import {
 import './ListingDetails.css';
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import BookingForm from './BookingForm';
-import ReviewsList from '../Reviews/ReviewsList'; // Add this import
+import ReviewsList from '../Reviews/ReviewsList'; 
+import Header from '../Headers/Header';
+import MessageHostButton from './MessageHostButton';
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -110,47 +112,8 @@ const ListingDetails = () => {
 
   return (
     <div className="page-container">
-      {/* Navigation Header */}
-      <header className="nav-header">
-        <div className="nav-content">
-          <div className="logo" onClick={() => navigate('/dashboard')}>
-            Rent-a-Space
-          </div>
-
-          <nav className="nav-menu">
-            <button 
-              className="rent-button"
-              onClick={() => navigate('/rent-out-space')}
-            >
-              Rent out a space
-            </button>
-
-            <button 
-              className="profile-button"
-              onClick={() => navigate('/profile')}
-            >
-              Profile
-            </button>
-
-            <ActivitiesDropdown 
-              onSelect={(option) => {
-                if (option === 'listings') {
-                  navigate('/my-listings');
-                } else if (option === 'bookings') {
-                  navigate('/my-bookings');
-                }
-              }} 
-            />
-
-            <button 
-              className="logout-button"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </nav>
-        </div>
-      </header>
+      <div className="content-wrapper">
+      <Header />
 
       {/* Main Content */}
       <main className="main-content">
@@ -197,13 +160,20 @@ const ListingDetails = () => {
           <div className="listing-content-grid">
             {/* Main Content */}
             <div className="listing-main">
-              <div className="listing-header">
+            <div className="listing-header">
                 <h1 className="listing-title">{listing.title}</h1>
                 <div className="listing-subtitle">
-                  {listing.owner_name && (
-                    <p className="listing-owner">Listed by {listing.owner_name}</p>
-                  )}
-<div className="rating-reviews">
+                <div className="host-info">
+  {listing.owner_name && (
+    <p className="listing-owner">Listed by {listing.owner_name}</p>
+  )}
+  <MessageHostButton 
+    listingId={id}
+    listingTitle={listing.title}
+    hostId={listing.user_id}
+  />
+</div>
+                <div className="rating-reviews">
   <div className="rating-display">
     <Star className="rating-star" />
     <span className="rating-number">
@@ -265,6 +235,7 @@ const ListingDetails = () => {
           </div>
         </div>
       </main>
+      </div>
 
       {/* Reviews Modal */}
       <ReviewsList 

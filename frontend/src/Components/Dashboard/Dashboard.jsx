@@ -4,6 +4,7 @@ import './Dashboard.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ActivitiesDropdown from './ActivitiesDropdown';
+import Header from '../Headers/Header';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -172,43 +173,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="logo">Rent-a-Space</div>
-        <nav>
-          <button
-            className="become-host"
-            onClick={() => navigate('/rent-out-space')}
-          >
-            Rent out a space
-          </button>
-          <button
-            className="profile-btn"
-            onClick={() => navigate('/profile')}
-          >
-            Profile
-          </button>
-          <ActivitiesDropdown
-  onSelect={(option) => {
-    if (option === 'listings') {
-      navigate('/my-listings');
-    } else if (option === 'bookings') {
-      navigate('/my-bookings');
-    } else if (option === 'notifications') {
-      navigate('/notifications'); // This ensures navigation works for notifications
-    }
-  }}
-/>
-          <button
-            className="logout-btn"
-            onClick={() => {
-              localStorage.clear();
-              navigate('/');
-            }}
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+      <Header />
 
       <div className="search-container">
         <div className="search-wrapper">

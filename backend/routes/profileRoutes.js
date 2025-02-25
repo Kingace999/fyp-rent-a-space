@@ -85,5 +85,21 @@ router.use((err, req, res, next) => {
     }
     next(err);
 });
+router.get('/:userId', authenticateToken, async (req, res) => {
+    try {
+      // Only return public information about the user
+      const user = await pool.query(
+        'SELECT id, name, location, bio, hobbies, profile_image_url FROM users WHERE id = $1',
+        [req.params.userId]
+      );
+      if (user.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user.rows[0]);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 
 module.exports = router;

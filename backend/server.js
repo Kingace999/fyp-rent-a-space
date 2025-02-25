@@ -10,7 +10,9 @@ const profileRoutes = require('./routes/profileRoutes');
 const listingsRoutes = require('./routes/listingsRoutes');
 const bookingRoutes = require('./routes/bookingsRoutes');
 const reviewsRoutes = require('./routes/reviewsRoutes');
-const paymentRoutes = require('./routes/paymentRoutes'); // Added payment routes
+const paymentRoutes = require('./routes/paymentRoutes'); 
+const notificationsRoutes = require('./routes/notificationRoutes');
+const messagesRoutes = require('./routes/messagesRoutes');
 
 // Initialize the app
 const app = express();
@@ -34,6 +36,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Test Route for Frontend Connection
 app.get('/', (req, res) => {
@@ -65,7 +68,9 @@ app.use('/profile', authenticateToken, profileRoutes);
 app.use('/listings', listingsRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/reviews', reviewsRoutes);
-app.use('/payments', paymentRoutes); // Add payment routes
+app.use('/payments', paymentRoutes); 
+app.use('/notifications', authenticateToken, notificationsRoutes);
+app.use('/messages', authenticateToken, messagesRoutes);
 
 // Start Server
 app.listen(PORT, () => {

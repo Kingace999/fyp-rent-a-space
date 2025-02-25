@@ -7,6 +7,11 @@ import './MyBookings.css';
 import { BookingDetails, CancelBookingDialog } from './BookingModals';
 import UpdateBookingButton from './UpdateBookingButton';
 import LeaveReviewForm from '../Reviews/LeaveReviewForm';
+import PaginationControls from './PaginationControls';
+import Header from '../Headers/Header';
+import MessageButton from './MessageButton';
+
+
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -25,6 +30,8 @@ const MyBookings = () => {
   const [selectedListingForReview, setSelectedListingForReview] = useState(null);
   const [userReviews, setUserReviews] = useState({}); // New state for tracking user reviews
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [bookingsPerPage] = useState(6);
 
   // Initial bookings fetch
   useEffect(() => {
@@ -163,6 +170,10 @@ const MyBookings = () => {
     setFilteredBookings(filtered);
   }, [bookings, searchTerm, dateFilter, statusFilter, sortCriteria]);
 
+
+useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, dateFilter, statusFilter, sortCriteria]);  
 // Replace this function
 const handleCancelBooking = async (bookingId) => {
   try {
@@ -278,48 +289,17 @@ const handleCancelBooking = async (bookingId) => {
       setError('Failed to refresh data.');
     }
   };
+  const indexOfLastBooking = currentPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstBooking, indexOfLastBooking);
+  const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
 
   return (
     <div className="my-bookings">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="logo" onClick={() => navigate('/dashboard')}>
-          Rent-a-Space
-        </div>
-        <nav>
-          <button
-            className="become-host"
-            onClick={() => navigate('/rent-out-space')}
-          >
-            Rent out a space
-          </button>
-          <button className="profile-btn" onClick={() => navigate('/profile')}>
-            Profile
-          </button>
-          <ActivitiesDropdown
-  onSelect={(option) => {
-    if (option === 'listings') {
-      navigate('/my-listings');
-    } else if (option === 'bookings') {
-      navigate('/my-bookings');
-    } else if (option === 'notifications') {
-      navigate('/notifications'); // This ensures navigation works for notifications
-    }
-  }}
-/>
-          <button
-            className="logout-btn"
-            onClick={() => {
-              localStorage.clear();
-              navigate('/');
-            }}
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+      {/* Header - Unchanged */}
+      <Header />
 
-      {/* Search and Filter Section */}
+      {/* Search and Filter Section - Unchanged */}
       <div className="search-filters">
         <div className="search-bar">
           <Search className="search-icon" size={20} />
@@ -370,7 +350,7 @@ const handleCancelBooking = async (bookingId) => {
         </div>
       </div>
 
-      {/* Bookings section with updated review button logic */}
+      {/* Bookings section - Modified with pagination */}
       <div className="bookings-container">
         {loading ? (
           <p>Loading bookings...</p>
@@ -382,84 +362,96 @@ const handleCancelBooking = async (bookingId) => {
             </button>
           </div>
         ) : (
-          filteredBookings.map((booking) => (
-            <div key={booking.id} className="booking-card">
-              <div className="booking-image">
-                <img
-                  src={
-                    booking.images && booking.images[0]
-                      ? `http://localhost:5000${booking.images[0]}`
-                      : '/default-space.jpg'
-                  }
-                  alt={booking.title}
+          <>
+            {currentBookings.map((booking) => (
+              <div key={booking.id} className="booking-card">
+                <div className="booking-image">
+                  <img
+                    src={
+                      booking.images && booking.images[0]
+                        ? `http://localhost:5000${booking.images[0]}`
+                        : '/default-space.jpg'
+                    }
+                    alt={booking.title}
+                  />
+                </div>
+                <div className="booking-details">
+                  <h3>{booking.title}</h3>
+                  <p><MapPin size={16} /> {booking.location}</p>
+                  <p>
+                    <Calendar size={16} /> Start:{' '}
+                    {new Date(booking.booking_start).toLocaleString()}
+                  </p>
+                  <p>
+                    <Calendar size={16} /> End:{' '}
+                    {new Date(booking.booking_end).toLocaleString()}
+                  </p>
+                  <p>
+                    <DollarSign size={16} />{' '}
+                    {booking.total_price.toLocaleString('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                    })}
+                  </p>
+                  <p className="booking-status">
+                    Status:{' '}
+                    <span className={`status-indicator ${booking.status}`}>
+                      {booking.status === 'pending_cancellation'
+                        ? 'Cancellation in Progress'
+                        : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                    </span>
+                  </p>
+                  <div className="actions">
+    <button onClick={() => handleViewDetails(booking)}>
+        View Details
+    </button>
+    {booking.status === 'active' &&
+        new Date(booking.booking_end) > new Date() &&
+        listings[booking.listing_id] && (
+            <>
+                <UpdateBookingButton
+                    booking={booking}
+                    listing={listings[booking.listing_id]}
+                    onUpdate={handleBookingUpdate}
                 />
-              </div>
-              <div className="booking-details">
-                <h3>{booking.title}</h3>
-                <p><MapPin size={16} /> {booking.location}</p>
-                <p>
-                  <Calendar size={16} /> Start:{' '}
-                  {new Date(booking.booking_start).toLocaleString()}
-                </p>
-                <p>
-                  <Calendar size={16} /> End:{' '}
-                  {new Date(booking.booking_end).toLocaleString()}
-                </p>
-                <p>
-                  <DollarSign size={16} />{' '}
-                  {booking.total_price.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  })}
-                </p>
-                <p className="booking-status">
-                  Status:{' '}
-                  <span className={`status-indicator ${booking.status}`}>
-  {booking.status === 'pending_cancellation' 
-    ? 'Cancellation in Progress'
-    : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-</span>
-                </p>
-                <div className="actions">
-                  <button onClick={() => handleViewDetails(booking)}>
-                    View Details
-                  </button>
-                  {booking.status === 'active' && 
-                   new Date(booking.booking_end) > new Date() && 
-                   listings[booking.listing_id] && (
-                    <>
-                      <UpdateBookingButton 
-                        booking={booking}
-                        listing={listings[booking.listing_id]}
-                        onUpdate={handleBookingUpdate}
-                      />
-                      <button onClick={() => handleCancelClick(booking)}>
-                        Cancel Booking
-                      </button>
-                    </>
-                  )}
-                  {booking.status === 'completed' && (
-                    <button 
-                      className="review-btn"
-                      onClick={() => {
-                        if (userReviews[booking.listing_id]) {
-                          handleEditReview(booking, userReviews[booking.listing_id]);
-                        } else {
-                          handleLeaveReview(booking);
-                        }
-                      }}
-                    >
-                      {userReviews[booking.listing_id] ? 'Edit Review' : 'Leave Review'}
-                    </button>
-                  )}
+                {/* Keep original classes and remove the wrapping div */}
+                <button 
+                    className="cancel-button"
+                    onClick={() => handleCancelClick(booking)}
+                >
+                    Cancel Booking
+                </button>
+                <MessageButton booking={booking} />
+            </>
+        )}
+    {booking.status === 'completed' && (
+        <button
+            className="review-btn"
+            onClick={() => {
+                if (userReviews[booking.listing_id]) {
+                    handleEditReview(booking, userReviews[booking.listing_id]);
+                } else {
+                    handleLeaveReview(booking);
+                }
+            }}
+        >
+            {userReviews[booking.listing_id] ? 'Edit Review' : 'Leave Review'}
+        </button>
+    )}
+</div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
 
-      {/* Modal Components */}
+      {/* Modal Components - Unchanged */}
       {selectedBooking && (
         <BookingDetails
           booking={selectedBooking}
@@ -467,16 +459,16 @@ const handleCancelBooking = async (bookingId) => {
         />
       )}
 
-{showCancelDialog && bookingToCancel && (
-  <CancelBookingDialog
-    booking={bookingToCancel}
-    onConfirm={() => handleCancelBooking(bookingToCancel.id)}
-    onClose={() => {
-      setShowCancelDialog(false);
-      setBookingToCancel(null);
-    }}
-  />
-)}
+      {showCancelDialog && bookingToCancel && (
+        <CancelBookingDialog
+          booking={bookingToCancel}
+          onConfirm={() => handleCancelBooking(bookingToCancel.id)}
+          onClose={() => {
+            setShowCancelDialog(false);
+            setBookingToCancel(null);
+          }}
+        />
+      )}
 
       {showReviewForm && selectedListingForReview && (
         <LeaveReviewForm
@@ -484,7 +476,7 @@ const handleCancelBooking = async (bookingId) => {
           onClose={() => {
             setShowReviewForm(false);
             setSelectedListingForReview(null);
-            refreshData(); // Refresh both bookings and reviews after submission
+            refreshData();
           }}
           listingName={selectedListingForReview.title}
           listingId={selectedListingForReview.listing_id}

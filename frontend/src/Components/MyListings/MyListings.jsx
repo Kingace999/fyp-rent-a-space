@@ -4,6 +4,8 @@ import './MyListings.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
+import Header from '../Headers/Header';
+import ManageGuests from './manageGuests';
 
 const MyListings = () => {
   const navigate = useNavigate();
@@ -46,6 +48,8 @@ const MyListings = () => {
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [listingToDelete, setListingToDelete] = useState(null);
+  const [showGuestsModal, setShowGuestsModal] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState(null);
 
   // Fetch user listings
   const fetchUserListings = async () => {
@@ -344,6 +348,11 @@ const MyListings = () => {
     }));
   };
 
+const handleManageGuestsClick = (listingId) => {
+    setSelectedListingId(listingId);
+    setShowGuestsModal(true);
+  };
+
 // Update the handleSave function in MyListings.jsx
 
 // Update the formData section in handleSave function
@@ -446,43 +455,7 @@ const handleSave = async () => {
 
   return (
     <div className="my-listings">
-      <header className="dashboard-header">
-        <div
-          className="logo"
-          onClick={() => navigate('/dashboard')}
-          style={{ cursor: 'pointer' }}
-        >
-          Rent-a-Space
-        </div>
-        <nav>
-          <button className="become-host" onClick={() => navigate('/rent-out-space')}>
-            Rent out a space
-          </button>
-          <button className="profile-btn" onClick={() => navigate('/profile')}>
-            Profile
-          </button>
-          <ActivitiesDropdown
-  onSelect={(option) => {
-    if (option === 'listings') {
-      navigate('/my-listings');
-    } else if (option === 'bookings') {
-      navigate('/my-bookings');
-    } else if (option === 'notifications') {
-      navigate('/notifications'); // This ensures navigation works for notifications
-    }
-  }}
-/>
-          <button
-            className="logout-btn"
-            onClick={() => {
-              localStorage.clear();
-              navigate('/');
-            }}
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+      <Header />
 
       <div className="listings-container">
         <h1>My Listings</h1>
@@ -538,19 +511,25 @@ const handleSave = async () => {
                     </span>
                   </div>
                   <div className="action-buttons">
-                    <button
-                      className="edit-button"
-                      onClick={() => handleEditClick(listing)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDeleteClick(listing.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+  <button
+    className="edit-button"
+    onClick={() => handleEditClick(listing)}
+  >
+    Edit
+  </button>
+  <button
+    className="manage-guests-button"
+    onClick={() => handleManageGuestsClick(listing.id)}
+  >
+    Manage Guests
+  </button>
+  <button
+    className="delete-button"
+    onClick={() => handleDeleteClick(listing.id)}
+  >
+    Delete
+  </button>
+</div>
                 </div>
               </div>
             ))}
@@ -916,9 +895,17 @@ const handleSave = async () => {
                 </button>
               </div>
             </div>
-          </div>
+          </div> 
         </div>
+        
       )}
+      {showGuestsModal && (
+  <ManageGuests
+    listingId={selectedListingId}
+    isOpen={showGuestsModal}
+    onClose={() => setShowGuestsModal(false)}
+  />
+)}
     </div>
   );
 };

@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const { createNotification } = require('../controllers/notificationsController');
+
 
 const createBooking = async (req, res) => {
     try {
@@ -96,6 +98,11 @@ const createBooking = async (req, res) => {
         try {
             await client.query('BEGIN');
 
+            const listingDetails = await client.query(
+                'SELECT title, user_id FROM listings WHERE id = $1',
+                [listing_id]
+            );
+
             // Insert booking
             const result = await client.query(
                 `INSERT INTO bookings 
@@ -104,6 +111,54 @@ const createBooking = async (req, res) => {
                  RETURNING *`,
                 [userId, listing_id, bookingStart, bookingEnd, total]
             );
+            await createNotification(
+                'booking_new',
+                listingDetails.rows[0].user_id,  // Send to host
+                `New booking request for "${listingDetails.rows[0].title}" on ${new Date(bookingStart).toLocaleDateString()}`,
+                result.rows[0].id
+            );
+
+            // Schedule upcoming booking notification for the user
+            const bookingStart24HoursAway = new Date(bookingStart.getTime() - (24 * 60 * 60 * 1000));
+            if (bookingStart24HoursAway > new Date()) {
+                setTimeout(async () => {
+                    await createNotification(
+                        'booking_upcoming',
+                        userId,
+                        `Reminder: Your booking for "${listingDetails.rows[0].title}" is tomorrow`,
+                        result.rows[0].id
+                    );
+                }, bookingStart24HoursAway.getTime() - Date.now());
+            }
+            const oneWeekAway = new Date(bookingStart.getTime() - (7 * 24 * 60 * 60 * 1000));
+if (oneWeekAway > new Date()) {
+    setTimeout(async () => {
+        await createNotification(
+            'booking_upcoming',
+            userId,
+            `Your booking for "${listingDetails.rows[0].title}" starts in one week (${new Date(bookingStart).toLocaleDateString()})`,
+            result.rows[0].id,
+            'Upcoming Booking'
+        );
+    }, oneWeekAway.getTime() - Date.now());
+}
+
+            try {
+                const userDetails = await client.query(
+                    `SELECT u.name FROM users u WHERE u.id = $1`,
+                    [userId]
+                );
+            
+                await createNotification(
+                    'booking_new',
+                    listingDetails.rows[0].user_id,  // Send to host
+                    `${userDetails.rows[0].name} has made a new booking for "${listingDetails.rows[0].title}"`,
+                    result.rows[0].id,
+                    'New Booking'
+                );
+            } catch (notificationError) {
+                console.error('Error creating host notification:', notificationError);
+            }
 
             await client.query('COMMIT');
             res.status(201).json({ 
@@ -184,8 +239,9 @@ const getListingBookings = async (req, res) => {
     try {
         const { listing_id } = req.params;
         const result = await pool.query(
-            `SELECT b.booking_start, b.booking_end
+            `SELECT b.id, b.user_id, b.booking_start, b.booking_end, u.name
              FROM bookings b
+             JOIN users u ON b.user_id = u.id
              WHERE b.listing_id = $1
              AND b.status = 'active'
              AND b.booking_end > NOW()
@@ -236,6 +292,34 @@ const deleteBooking = async (req, res) => {
              WHERE id = $2 AND user_id = $3`,
             ['cancelled', bookingId, userId]
         );
+
+        await createNotification(
+            'booking_cancelled',
+            booking.user_id,
+            `Your booking for ${booking.title} has been cancelled`,
+            bookingId
+        );
+
+        try {
+            const bookingDetails = await client.query(
+                `SELECT l.user_id as host_id, l.title, u.name as guest_name 
+                 FROM bookings b
+                 JOIN listings l ON b.listing_id = l.id 
+                 JOIN users u ON b.user_id = u.id
+                 WHERE b.id = $1`,
+                [bookingId]
+            );
+        
+            await createNotification(
+                'booking_cancelled',
+                bookingDetails.rows[0].host_id,
+                `${bookingDetails.rows[0].guest_name} has cancelled their booking for "${bookingDetails.rows[0].title}"`,
+                bookingId,
+                'Booking Cancelled'
+            );
+        } catch (notificationError) {
+            console.error('Error creating host notification:', notificationError);
+        }
 
         await client.query('COMMIT');
         res.status(200).json({ 
@@ -404,6 +488,32 @@ const updateBooking = async (req, res) => {
                  RETURNING *`,
                 [utcBookingStart, utcBookingEnd, totalPrice, bookingId, userId]
             );
+
+            await createNotification(
+                'booking_modified',
+                userId,
+                `Your booking for ${listing.title} has been updated to ${new Date(utcBookingStart).toLocaleDateString()}`,
+                bookingId
+            );
+
+            try {
+                const guestDetails = await client.query(
+                    `SELECT u.name as guest_name 
+                     FROM users u 
+                     WHERE u.id = $1`,
+                    [userId]
+                );
+            
+                await createNotification(
+                    'booking_modified',
+                    listing.user_id,  // host's ID
+                    `${guestDetails.rows[0].guest_name} has modified their booking for "${listing.title}"`,
+                    bookingId,
+                    'Booking Modified'
+                );
+            } catch (notificationError) {
+                console.error('Error creating host notification:', notificationError);
+            }
 
             await client.query('COMMIT');
             res.status(200).json({

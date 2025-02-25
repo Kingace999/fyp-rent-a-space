@@ -8,7 +8,8 @@ import RentOutSpace from './Components/RentOutSpace/RentOutSpace';
 import MyListings from './Components/MyListings/MyListings';
 import ListingDetails from './Components/ListingDetails/ListingDetails';
 import MyBookings from './Components/MyBookings/MyBookings';
-import Notifications from './Components/Notifications/Notifications'; // Import Notifications
+import Notifications from './Components/Notifications/Notifications'; 
+import Messages from './Components/Messages/Messages';
 
 const App = () => {
   const [message, setMessage] = useState('');
@@ -26,11 +27,13 @@ const App = () => {
         <Route path="/" element={<LoginSignup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/rent-out-space" element={<RentOutSpace />} />
         <Route path="/my-listings" element={<MyListings />} />
         <Route path="/listing/:id" element={<ListingDetails />} />
         <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/notifications" element={<Notifications />} /> 
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/messages" element={<Messages />} /> 
       </Routes>
     </Router>
   );

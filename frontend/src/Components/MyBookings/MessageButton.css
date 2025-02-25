@@ -1,0 +1,56 @@
+.message-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background-color: #0ea5e9;
+    color: white;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.message-button:hover:not(:disabled) {
+    background-color: #0284c7;
+    transform: translateY(-2px);
+}
+
+.message-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.message-button.loading {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.message-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .message-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -446,17 +446,18 @@
   .booking-submit-button:not(:disabled):hover {
     background-color: #1D4ED8;
   }
+ 
   .payment-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    width: 100vw; /* Ensure it covers the full screen width */
+    height: 100vh; /* Ensure full-page height */
+    background: rgba(0, 0, 0, 0.5); /* Dark overlay */
     display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 1000;
+    justify-content: center;
+    z-index: 9999; /* Highest z-index to overlay everything */
   }
   
   .payment-modal {
@@ -465,7 +466,16 @@
     border-radius: 8px;
     max-width: 500px;
     width: 90%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center properly */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 10000; /* Ensure it's above all other elements */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth transition */
   }
+  
+  
   /* Desktop Styles */
   @media (min-width: 1024px) {
     .booking-card[data-mode="day"],

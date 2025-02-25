@@ -1,0 +1,150 @@
+.notification-bell-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+  
+  .notification-bell-container {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+  }
+  
+  .notification-bell-icon {
+    width: 24px;
+    height: 24px;
+    color: #4b5563;
+    transition: color 0.2s ease;
+  }
+  
+  .notification-bell-container:hover .notification-bell-icon {
+    color: #3b82f6;
+  }
+  
+  .notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #ef4444;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    min-width: 18px;
+    text-align: center;
+  }
+  
+  .notification-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+  }
+  
+  .notification-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .notification-dropdown-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #1f2937;
+  }
+  
+  .notification-dropdown-header button {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  
+  .notification-dropdown-header button:hover {
+    text-decoration: underline;
+  }
+  
+  .notification-dropdown-content {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .dropdown-notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .dropdown-notification-item:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .dropdown-notification-item.unread {
+    background-color: #eff6ff;
+  }
+  
+  .dropdown-notification-item .notification-message {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #4b5563;
+  }
+  
+  .dropdown-notification-item.unread .notification-message {
+    color: #1f2937;
+    font-weight: 500;
+  }
+  
+  .dropdown-notification-item .notification-time {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  
+  .no-notifications {
+    padding: 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  
+  /* New icon styles */
+  .notification-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+  }
+  
+  .booking-icon {
+    color: #3b82f6;
+  }
+  
+  .payment-icon {
+    color: #10b981;
+  }
+  
+  .review-icon {
+    color: #8b5cf6;
+  }
+  
+  .message-icon {
+    color: #f59e0b;
+  }
+  
+  .default-icon {
+    color: #6b7280;
+  }
+  
+  .notification-content {
+    display: flex;
+    flex-direction: column;
+  }

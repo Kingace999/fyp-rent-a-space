@@ -55,6 +55,12 @@ const ActivitiesDropdown = ({ onSelect }) => {
           >
             Notifications
           </button>
+          <button
+            className="dropdown-item"
+            onClick={() => handleOptionClick('messages')}  // ✅ Added Messages Option
+          >
+            Messages
+          </button>
         </div>
       )}
     </div>

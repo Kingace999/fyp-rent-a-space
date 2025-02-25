@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Edit, MapPin, Calendar, Phone, Mail, Home, Save, X } from 'lucide-react';
 import './Profile.css';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 const Profile = () => {
+  const { userId } = useParams(); // Get userId from URL parameter
   const [isEditing, setIsEditing] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
@@ -18,6 +20,7 @@ const Profile = () => {
     hobbies: [],
     profile_image_url: ""
   });
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
 
   const BACKEND_URL = 'http://localhost:5000';
 
@@ -26,7 +29,17 @@ const Profile = () => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await axios.get('http://localhost:5000/profile', {
+        let endpoint = 'http://localhost:5000/profile';
+        
+        // If userId is in URL params, fetch that specific user profile
+        if (userId) {
+          endpoint = `http://localhost:5000/profile/${userId}`;
+          setIsOwnProfile(false);
+        } else {
+          setIsOwnProfile(true);
+        }
+        
+        const response = await axios.get(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -42,7 +55,7 @@ const Profile = () => {
         setUserData({
           ...response.data,
           hobbies: hobbies,
-          joined: new Date(response.data.created_at).toLocaleDateString() || "Unknown Date"
+          joined: response.data.created_at ? new Date(response.data.created_at).toLocaleDateString() : "Unknown Date"
         });
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -50,7 +63,7 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, []);
+  }, [userId]); // Re-run effect when userId changes
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -154,26 +167,30 @@ const Profile = () => {
           <div className="profile-image-container">
             <div className="profile-image">
               <img 
-  src={userData.profile_image_url ? `${BACKEND_URL}${userData.profile_image_url}` : "/api/placeholder/128/128"} 
-  alt="Profile" 
-  className="profile-img"
-/>
+                src={userData.profile_image_url ? `${BACKEND_URL}${userData.profile_image_url}` : "/api/placeholder/128/128"} 
+                alt="Profile" 
+                className="profile-img"
+              />
             </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept="image/jpeg,image/jpg,image/png"
-              style={{ display: 'none' }}
-            />
-            <button 
-              className="camera-button"
-              onClick={() => fileInputRef.current.click()}
-            >
-              <Camera className="h-4 w-4" />
-            </button>
-            {uploadError && (
-              <div className="error-message">{uploadError}</div>
+            {isOwnProfile && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/jpeg,image/jpg,image/png"
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  className="camera-button"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+                {uploadError && (
+                  <div className="error-message">{uploadError}</div>
+                )}
+              </>
             )}
           </div>
           
@@ -203,75 +220,86 @@ const Profile = () => {
                     <span>{userData.location || 'No Location Set'}</span>
                   )}
                 </div>
-                <div className="join-date">
-                  <Calendar className="h-4 w-4" />
-                  <span>Joined {userData.joined || 'Unknown Date'}</span>
-                </div>
-              </div>
-              <div className="edit-buttons">
-                {isEditing ? (
-                  <>
-                    <button className="save-button" onClick={handleSave}>
-                      <Save className="h-4 w-4" />
-                      Save
-                    </button>
-                    <button className="cancel-button" onClick={handleCancel}>
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button className="edit-button" onClick={() => setIsEditing(true)}>
-                    <Edit className="h-4 w-4" />
-                    Edit Profile
-                  </button>
+                {userData.joined && (
+                  <div className="join-date">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {userData.joined || 'Unknown Date'}</span>
+                  </div>
                 )}
               </div>
+              {isOwnProfile && (
+                <div className="edit-buttons">
+                  {isEditing ? (
+                    <>
+                      <button className="save-button" onClick={handleSave}>
+                        <Save className="h-4 w-4" />
+                        Save
+                      </button>
+                      <button className="cancel-button" onClick={handleCancel}>
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button className="edit-button" onClick={() => setIsEditing(true)}>
+                      <Edit className="h-4 w-4" />
+                      Edit Profile
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className="contact-card">
-          <h2>Contact Information</h2>
-          <div className="contact-info">
-            <div className="contact-item">
-              <Phone className="h-4 w-4" />
-              {isEditing ? (
-                <input
-                  type="tel"
-                  value={userData.phone || ''}
-                  onChange={(e) => handleInputChange(e, 'phone')}
-                  className="edit-input"
-                />
-              ) : (
-                <span>{userData.phone || 'No Phone Set'}</span>
-              )}
-            </div>
-            <div className="contact-item">
-              <Mail className="h-4 w-4" />
-              <span>{userData.email || 'No Email Set'}</span>
-            </div>
-            <div className="contact-item">
-              <Home className="h-4 w-4" />
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={userData.address || ''}
-                  onChange={(e) => handleInputChange(e, 'address')}
-                  className="edit-input"
-                />
-              ) : (
-                <span>{userData.address || 'No Address Set'}</span>
-              )}
+        {isOwnProfile ? (
+          <div className="contact-card">
+            <h2>Contact Information</h2>
+            <div className="contact-info">
+              <div className="contact-item">
+                <Phone className="h-4 w-4" />
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={userData.phone || ''}
+                    onChange={(e) => handleInputChange(e, 'phone')}
+                    className="edit-input"
+                  />
+                ) : (
+                  <span>{userData.phone || 'No Phone Set'}</span>
+                )}
+              </div>
+              <div className="contact-item">
+                <Mail className="h-4 w-4" />
+                <span>{userData.email || 'No Email Set'}</span>
+              </div>
+              <div className="contact-item">
+                <Home className="h-4 w-4" />
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={userData.address || ''}
+                    onChange={(e) => handleInputChange(e, 'address')}
+                    className="edit-input"
+                  />
+                ) : (
+                  <span>{userData.address || 'No Address Set'}</span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="contact-card">
+            <h2>Contact Information</h2>
+            <p className="privacy-notice">This user's contact information is private</p>
+          </div>
+        )}
 
         {/* About Section */}
         <div className="about-card">
           <h2>About</h2>
-          {isEditing ? (
+          {isEditing && isOwnProfile ? (
             <textarea
               value={userData.bio || ''}
               onChange={(e) => handleInputChange(e, 'bio')}
@@ -287,7 +315,7 @@ const Profile = () => {
         {/* Hobbies Section */}
         <div className="about-card">
           <h2>Hobbies & Interests</h2>
-          {isEditing ? (
+          {isEditing && isOwnProfile ? (
             <textarea
               value={Array.isArray(userData.hobbies) ? userData.hobbies.join(", ") : ''}
               onChange={(e) => handleInputChange(e, 'hobbies')}

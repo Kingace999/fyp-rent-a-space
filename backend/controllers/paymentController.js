@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const pool = require('../config/db');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const { createNotification } = require('../controllers/notificationsController');
 
 const getChargeDetails = async (paymentIntentId) => {
     try {
@@ -285,6 +286,43 @@ const handleWebhook = async (req, res) => {
                                 ]
                             );
 
+                            try {
+                                const listingDetails = await client.query(
+                                    'SELECT title FROM listings WHERE id = (SELECT listing_id FROM bookings WHERE id = $1)',
+                                    [metadata.booking_id]
+                                );
+                        
+                                await createNotification(
+                                    'booking_modified',
+                                    metadata.userId,
+                                    `Your booking for "${listingDetails.rows[0].title}" has been updated with additional payment of $${metadata.amount}`,
+                                    metadata.booking_id,
+                                    'Booking Updated'
+                                );
+                            } catch (notificationError) {
+                                console.error('Error creating update notification:', notificationError);
+                            }
+                            try {
+                                const bookingDetails = await client.query(
+                                    `SELECT l.user_id as host_id, l.title, u.name as guest_name 
+                                     FROM bookings b
+                                     JOIN listings l ON b.listing_id = l.id 
+                                     JOIN users u ON b.user_id = u.id
+                                     WHERE b.id = $1`,
+                                    [metadata.booking_id]
+                                );
+                            
+                                await createNotification(
+                                    'booking_modified',
+                                    bookingDetails.rows[0].host_id,
+                                    `${bookingDetails.rows[0].guest_name} has modified their booking for "${bookingDetails.rows[0].title}" with additional payment of $${metadata.amount}`,
+                                    metadata.booking_id,
+                                    'Booking Modified'
+                                );
+                            } catch (notificationError) {
+                                console.error('Error creating host notification:', notificationError);
+                            }
+
                             console.log('Successfully processed update payment');
 
                         } catch (error) {
@@ -341,6 +379,37 @@ const handleWebhook = async (req, res) => {
                         );
 
                         console.log('Successfully processed initial booking payment');
+
+                        await createNotification(
+                            'payment_success',
+                            metadata.userId,
+                            `Payment of $${metadata.amount} was successful for your booking`,
+                            bookingId,
+                            'Payment Confirmation'
+                            
+                        );
+                        try {
+                            // Get host and guest details
+                            const bookingDetails = await client.query(
+                                `SELECT l.user_id as host_id, l.title, u.name as guest_name 
+                                 FROM bookings b
+                                 JOIN listings l ON b.listing_id = l.id 
+                                 JOIN users u ON b.user_id = u.id
+                                 WHERE b.id = $1`,
+                                [bookingId]
+                            );
+                        
+                            // Notify host about the new booking
+                            await createNotification(
+                                'booking_new',
+                                bookingDetails.rows[0].host_id,
+                                `${bookingDetails.rows[0].guest_name} has booked "${bookingDetails.rows[0].title}" for $${metadata.amount}`,
+                                bookingId,
+                                'New Booking'
+                            );
+                        } catch (notificationError) {
+                            console.error('Error creating host notification:', notificationError);
+                        }
                     }
                     break;
 
@@ -414,6 +483,15 @@ const handleWebhook = async (req, res) => {
                                      WHERE id = $2 AND status = 'pending_cancellation'`,
                                     [parseFloat(refundMetadata.amount), refundMetadata.bookingId]
                                 );
+
+                                await createNotification(
+                                    'payment_refund',
+                                    refundMetadata.userId,
+                                    `Refund of $${refundMetadata.amount} has been processed for your booking`,
+                                    refundMetadata.bookingId,
+                                    'Refund Processed'
+                                );
+                                
                                 console.log('Successfully processed cancellation refund');
                             }
                         }
@@ -607,6 +685,45 @@ const processBookingRefund = async (req, res) => {
             [totalRefundAmount, bookingId]
         );
 
+        try {
+            const listingDetails = await client.query(
+                'SELECT title FROM listings WHERE id = (SELECT listing_id FROM bookings WHERE id = $1)',
+                [bookingId]
+            );
+        
+            await createNotification(
+                'payment_refund',
+                userId,
+                `Full refund of $${totalRefundAmount} processed for your booking of "${listingDetails.rows[0].title}"`,
+                bookingId,
+                'Refund Processed'
+            );
+        } catch (notificationError) {
+            console.error('Error creating refund notification:', notificationError);
+        }
+        try {
+            const bookingDetails = await client.query(
+                `SELECT l.user_id as host_id, l.title, u.name as guest_name 
+                 FROM bookings b
+                 JOIN listings l ON b.listing_id = l.id 
+                 JOIN users u ON b.user_id = u.id
+                 WHERE b.id = $1`,
+                [bookingId]
+            );
+        
+            // Notify host about the cancellation
+            await createNotification(
+                'booking_cancelled',
+                bookingDetails.rows[0].host_id,
+                `${bookingDetails.rows[0].guest_name} has cancelled their booking for "${bookingDetails.rows[0].title}" (refund amount: $${totalRefundAmount})`,
+                bookingId,
+                'Booking Cancelled'
+            );
+        } catch (notificationError) {
+            console.error('Error creating host notification:', notificationError);
+        }
+        
+
         await client.query('COMMIT');
         
         console.log('Refund process completed successfully:', {
@@ -734,6 +851,23 @@ const processPartialRefund = async (req, res) => {
                  WHERE id = $4`,
                 [startDateObj, endDateObj, refundAmount, bookingId]
             );
+        }
+
+        try {
+            const listingDetails = await client.query(
+                'SELECT title FROM listings WHERE id = (SELECT listing_id FROM bookings WHERE id = $1)',
+                [bookingId]
+            );
+        
+            await createNotification(
+                'payment_refund',
+                userId,
+                `Partial refund of $${refundAmount} processed for your booking of "${listingDetails.rows[0].title}"`,
+                bookingId,
+                'Partial Refund Processed'
+            );
+        } catch (notificationError) {
+            console.error('Error creating refund notification:', notificationError);
         }
 
         await client.query('COMMIT');
