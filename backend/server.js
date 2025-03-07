@@ -13,7 +13,12 @@ const reviewsRoutes = require('./routes/reviewsRoutes');
 const paymentRoutes = require('./routes/paymentRoutes'); 
 const notificationsRoutes = require('./routes/notificationRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
+const vision = require('@google-cloud/vision');
+const spaceAnalysisRoutes = require('./routes/spaceAnalysisRoutes');
 
+const client = new vision.ImageAnnotatorClient({
+    keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+});
 // Initialize the app
 const app = express();
 const PORT = 5000;
@@ -71,7 +76,7 @@ app.use('/reviews', reviewsRoutes);
 app.use('/payments', paymentRoutes); 
 app.use('/notifications', authenticateToken, notificationsRoutes);
 app.use('/messages', authenticateToken, messagesRoutes);
-
+app.use('/space-analysis', spaceAnalysisRoutes);
 // Start Server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

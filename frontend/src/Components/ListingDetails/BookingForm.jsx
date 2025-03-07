@@ -592,8 +592,8 @@ const BookingForm = ({ listing, onSubmit }) => {
       </div>
    
       {showPayment && (
-  <div className="payment-overlay">
-    <div className="payment-modal">
+  <div className="payment-overlay" onClick={() => setShowPayment(false)}>
+    <div className="payment-modal" onClick={(e) => e.stopPropagation()}>
       <Payments 
         amount={Number(calculateTotal) || 0}
         listing={listing}

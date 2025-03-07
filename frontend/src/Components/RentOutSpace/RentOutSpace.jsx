@@ -2,40 +2,49 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import './RentOutSpace.css'
 import LocationPicker from './LocationPicker';
+import DocumentVerificationModal from '../Verification/DocumentVerificationModal';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AnalyzeSpaceButton from './AnalyzeSpaceButton';
+import AnalysisResultModal from './AnalysisResultModal';
 
 const RentOutSpace = () => {
   const navigate = useNavigate();
   const [spaceDetails, setSpaceDetails] = useState({
-  title: '',
-  description: '',
-  type: '',
-  customType: '',
-  price: '',
-  priceType: 'hour',
-  capacity: '',
-  amenities: [],
-  customAmenities: [],
-  location: '',
-  availability: {
-    startDate: '',
-    endDate: '',
-    available_start_time: '',
-    available_end_time: ''
-  },
-  coordinates: {
-    latitude: 51.505, // default coordinates
-    longitude: -0.09
-  }
-});
+    title: '',
+    description: '',
+    type: '',
+    customType: '',
+    price: '',
+    priceType: 'hour',
+    capacity: '',
+    amenities: [],
+    customAmenities: [],
+    location: '',
+    availability: {
+      startDate: '',
+      endDate: '',
+      available_start_time: '',
+      available_end_time: ''
+    },
+    coordinates: {
+      latitude: 51.505, // default coordinates
+      longitude: -0.09
+    },
+    isVerified: false // New verification status field
+  });
   const [images, setImages] = useState([]);
   const [message, setMessage] = useState(null);
   const [showCustomType, setShowCustomType] = useState(false);
   const [newCustomAmenity, setNewCustomAmenity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [currentAnalysis, setCurrentAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   
+  // New state for verification modal
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const spaceTypes = [
     'Garage',
@@ -255,95 +264,123 @@ const RentOutSpace = () => {
     return true;
   };
 
-// In the handleSubmit function (RentOutSpace.jsx)
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-
-  if (!validateForm()) {
-    setIsSubmitting(false);
-    return;
-  }
-
-  const coordinates = {
-    latitude: spaceDetails.coordinates.latitude.toString(),
-    longitude: spaceDetails.coordinates.longitude.toString()
-  };
-
-  if (!coordinates.latitude || !coordinates.longitude) {
-    setMessage({ type: 'error', text: 'Please select a location on the map' });
-    setIsSubmitting(false);
-    return;
-  }
-
-  const requestData = {
-    title: spaceDetails.title,
-    description: spaceDetails.description,
-    type: spaceDetails.type,
-    customType: spaceDetails.customType,
-    price: spaceDetails.price,
-    priceType: spaceDetails.priceType,
-    capacity: spaceDetails.capacity,
-    location: spaceDetails.location,
-    latitude: coordinates.latitude,
-    longitude: coordinates.longitude,
-    startDate: spaceDetails.availability.startDate,
-    endDate: spaceDetails.availability.endDate,
-    available_start_time: spaceDetails.availability.available_start_time, 
-    available_end_time: spaceDetails.availability.available_end_time,   
-    amenities: spaceDetails.amenities,
-    customAmenities: spaceDetails.customAmenities
-  };
-
-  const formData = new FormData();
-  Object.entries(requestData).forEach(([key, value]) => {
-    if (key === 'amenities' || key === 'customAmenities') {
-      formData.append(key, JSON.stringify(Array.isArray(value) ? value : []));
-    } else {
-      formData.append(key, value);
-    }
-  });
-
-  if (images && images.length > 0) {
-    images.forEach((image) => {
-      formData.append('images', image);
-    });
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage({ type: 'error', text: 'Authentication token not found. Please log in again.' });
-      setIsSubmitting(false);
+  // Modified handleSubmit to include verification step
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
 
-    
+    const coordinates = {
+      latitude: spaceDetails.coordinates.latitude.toString(),
+      longitude: spaceDetails.coordinates.longitude.toString()
+    };
 
-    const response = await axios.post('http://localhost:5000/listings', formData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data'
+    if (!coordinates.latitude || !coordinates.longitude) {
+      setMessage({ type: 'error', text: 'Please select a location on the map' });
+      return;
+    }
+
+    // Show verification modal instead of submitting directly
+    setShowVerificationModal(true);
+  };
+
+  // New function to handle the actual form submission after verification
+  const submitFormAfterVerification = async () => {
+    setIsSubmitting(true);
+
+    const coordinates = {
+      latitude: spaceDetails.coordinates.latitude.toString(),
+      longitude: spaceDetails.coordinates.longitude.toString()
+    };
+
+    const requestData = {
+      title: spaceDetails.title,
+      description: spaceDetails.description,
+      type: spaceDetails.type,
+      customType: spaceDetails.customType,
+      price: spaceDetails.price,
+      priceType: spaceDetails.priceType,
+      capacity: spaceDetails.capacity,
+      location: spaceDetails.location,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      startDate: spaceDetails.availability.startDate,
+      endDate: spaceDetails.availability.endDate,
+      available_start_time: spaceDetails.availability.available_start_time, 
+      available_end_time: spaceDetails.availability.available_end_time,   
+      amenities: spaceDetails.amenities,
+      customAmenities: spaceDetails.customAmenities,
+      is_verified: true // Add the verification status
+    };
+
+    const formData = new FormData();
+    Object.entries(requestData).forEach(([key, value]) => {
+      if (key === 'amenities' || key === 'customAmenities') {
+        formData.append(key, JSON.stringify(Array.isArray(value) ? value : []));
+      } else {
+        formData.append(key, value);
       }
     });
 
-    setMessage({ type: 'success', text: 'Listing created successfully!' });
-    setTimeout(() => navigate('/dashboard'), 1500);
-  } catch (error) {
-    console.error('Error submitting form:', error);
-    setMessage({
-      type: 'error',
-      text: error.response?.data?.message || 'Failed to create listing. Please try again.'
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    if (images && images.length > 0) {
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
+    }
 
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage({ type: 'error', text: 'Authentication token not found. Please log in again.' });
+        setIsSubmitting(false);
+        return;
+      }
 
+      const response = await axios.post('http://localhost:5000/listings', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
+      setMessage({ type: 'success', text: 'Listing created successfully!' });
+      setTimeout(() => navigate('/dashboard'), 1500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to create listing. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-
+  // Handler for verification completion
+  const handleVerificationComplete = (success) => {
+    if (success) {
+      setSpaceDetails(prev => ({ ...prev, isVerified: true }));
+      setShowVerificationModal(false);
+      submitFormAfterVerification();
+    } else {
+      setShowVerificationModal(false);
+      setMessage({ type: 'error', text: 'Verification failed. Please try again.' });
+    }
+  };
+  const handleAnalysisComplete = (analysis) => {
+    setCurrentAnalysis(analysis);
+  };
+  
+  const closeAnalysisModal = () => {
+    setAnalysisModalOpen(false);
+    setCurrentAnalysis(null);
+  };
+  
+  const openAnalysisModal = () => {
+    setAnalysisModalOpen(true);
+  };
 
   const getInputClassName = (fieldName) => {
     return `${errors[fieldName] ? 'border-red-500' : ''} ${isSubmitting ? 'opacity-50' : ''}`;
@@ -537,11 +574,11 @@ const handleSubmit = async (e) => {
        
         {/* Location */}
         <LocationPicker 
-  spaceDetails={spaceDetails}
-  setSpaceDetails={setSpaceDetails}
-  isSubmitting={isSubmitting}
-  errors={errors}
-/>
+          spaceDetails={spaceDetails}
+          setSpaceDetails={setSpaceDetails}
+          isSubmitting={isSubmitting}
+          errors={errors}
+        />
 
 
         {/* Photo Upload */}
@@ -561,30 +598,43 @@ const handleSubmit = async (e) => {
                 Click to upload images (max 5)
               </div>
             </div>
+            {/* Replace this section in your RentOutSpace.jsx file */}
             {images.length > 0 && (
   <div className="image-preview-container">
-    {images.length > 0 && (
-  <div className="image-preview-container">
-    {images.map((image, index) => (
-      <div key={index} className="image-preview relative flex items-center bg-gray-50 p-2 rounded">
-        <img 
-          src={image.preview} 
-          alt={`Preview ${index + 1}`} 
-          style={{ maxWidth: '100px', maxHeight: '100px', width: 'auto', height: 'auto' }}
-          className="object-contain rounded"
-        />
-        <button
-          type="button"
-          onClick={() => removeImage(index)}
-          className="remove-image absolute top-1 right-1"
-          disabled={isSubmitting}
-        >
-          <X size={14} />
-        </button>
-      </div>
-    ))}
-  </div>
-)}
+    <div className="image-previews-grid">
+      {images.map((image, index) => (
+        <div key={index} className="image-preview-wrapper">
+          <div className="image-preview relative flex items-center justify-center bg-gray-50 p-3 rounded">
+            <img 
+              src={image.preview} 
+              alt={`Preview ${index + 1}`} 
+              style={{ maxWidth: '100%', maxHeight: '150px', width: 'auto', height: 'auto' }}
+              className="object-contain rounded"
+            />
+            <button
+              type="button"
+              onClick={() => removeImage(index)}
+              className="remove-image absolute top-2 right-2"
+              disabled={isSubmitting}
+            >
+              <X size={16} />
+            </button>
+          </div>
+          
+          {/* Pass the handlers to the button */}
+          <AnalyzeSpaceButton 
+            imageIndex={index} 
+            image={image} 
+            onAnalysisStart={() => {
+              setAnalysisLoading(true);
+              openAnalysisModal();
+            }}
+            onAnalysisComplete={handleAnalysisComplete}
+            onAnalysisError={() => setAnalysisLoading(false)}
+          />
+        </div>
+      ))}
+    </div>
   </div>
 )}
           </div>
@@ -592,72 +642,72 @@ const handleSubmit = async (e) => {
 
         {/* Availability section with validation */}
         <div className="form-section">
- <h2>Availability</h2>
- <div className="date-inputs">
-   <div className="form-group">
-     <label>Start Date:</label>
-     <input
-       type="date"
-       name="startDate"
-       value={spaceDetails.availability.startDate}
-       onChange={handleDateChange}
-       className={getInputClassName('startDate')}
-       disabled={isSubmitting}
-       required
-       min={new Date().toISOString().split('T')[0]}
-     />
-     {errors.startDate && 
-       <span className="text-red-500 text-sm mt-1">{errors.startDate}</span>}
-   </div>
+          <h2>Availability</h2>
+          <div className="date-inputs">
+            <div className="form-group">
+              <label>Start Date:</label>
+              <input
+                type="date"
+                name="startDate"
+                value={spaceDetails.availability.startDate}
+                onChange={handleDateChange}
+                className={getInputClassName('startDate')}
+                disabled={isSubmitting}
+                required
+                min={new Date().toISOString().split('T')[0]}
+              />
+              {errors.startDate && 
+                <span className="text-red-500 text-sm mt-1">{errors.startDate}</span>}
+            </div>
 
-   <div className="form-group">
-     <label>End Date:</label>
-     <input
-       type="date"
-       name="endDate"
-       value={spaceDetails.availability.endDate}
-       onChange={handleDateChange}
-       className={getInputClassName('endDate')}
-       disabled={isSubmitting}
-       required
-       min={spaceDetails.availability.startDate || 
-            new Date().toISOString().split('T')[0]}
-     />
-     {errors.endDate && 
-       <span className="text-red-500 text-sm mt-1">{errors.endDate}</span>}
-   </div>
+            <div className="form-group">
+              <label>End Date:</label>
+              <input
+                type="date"
+                name="endDate"
+                value={spaceDetails.availability.endDate}
+                onChange={handleDateChange}
+                className={getInputClassName('endDate')}
+                disabled={isSubmitting}
+                required
+                min={spaceDetails.availability.startDate || 
+                     new Date().toISOString().split('T')[0]}
+              />
+              {errors.endDate && 
+                <span className="text-red-500 text-sm mt-1">{errors.endDate}</span>}
+            </div>
 
-   <div className="form-group">
-     <label>Available Times:</label>
-     <div className="time-inputs">
-       <input
-         type="time"
-         name="available_start_time"
-         value={spaceDetails.availability.available_start_time}
-         onChange={handleDateChange}
-         className={getInputClassName('available_start_time')}
-         disabled={isSubmitting}
-         required
-       />
-       <span>to</span>
-       <input
-         type="time"
-         name="available_end_time"
-         value={spaceDetails.availability.available_end_time}
-         onChange={handleDateChange}
-         className={getInputClassName('available_end_time')}
-         disabled={isSubmitting}
-         required
-       />
-       {errors.availableTime && 
-         <span className="text-red-500 text-sm mt-1">{errors.availableTime}</span>}
-     </div>
-   </div>
- </div>
-</div>
+            <div className="form-group">
+              <label>Available Times:</label>
+              <div className="time-inputs">
+                <input
+                  type="time"
+                  name="available_start_time"
+                  value={spaceDetails.availability.available_start_time}
+                  onChange={handleDateChange}
+                  className={getInputClassName('available_start_time')}
+                  disabled={isSubmitting}
+                  required
+                />
+                <span>to</span>
+                <input
+                  type="time"
+                  name="available_end_time"
+                  value={spaceDetails.availability.available_end_time}
+                  onChange={handleDateChange}
+                  className={getInputClassName('available_end_time')}
+                  disabled={isSubmitting}
+                  required
+                />
+                {errors.availableTime && 
+                  <span className="text-red-500 text-sm mt-1">{errors.availableTime}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="form-actions">
-        <button 
+          <button 
             type="button" 
             className="cancel-button"
             disabled={isSubmitting}
@@ -683,6 +733,18 @@ const handleSubmit = async (e) => {
           </button>
         </div>
       </form>
+
+      {/* Document verification modal */}
+      <DocumentVerificationModal 
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerificationComplete={handleVerificationComplete}
+      />
+      <AnalysisResultModal
+        isOpen={analysisModalOpen}
+        onClose={closeAnalysisModal}
+        analysis={currentAnalysis}
+      />
     </div>
   );
 };

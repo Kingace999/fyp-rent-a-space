@@ -5,7 +5,7 @@ const createListing = async (req, res) => {
         const {
             title, description, type, customType, price, priceType, 
             capacity, location, latitude, longitude, startDate, endDate,
-            available_start_time, available_end_time
+            available_start_time, available_end_time, is_verified
         } = req.body;
 
         const parseJSONField = (field) => {
@@ -49,19 +49,22 @@ const createListing = async (req, res) => {
         const userId = req.user.userId;
         const imageUrls = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
+        // Default to false if not provided for backward compatibility
+        const isVerified = is_verified === 'true' || is_verified === true;
+
         const result = await pool.query(
             `INSERT INTO listings 
             (user_id, title, description, type, custom_type, price, price_type,
              capacity, location, latitude, longitude, amenities, custom_amenities,
-             start_date, end_date, available_start_time, available_end_time, images)
+             start_date, end_date, available_start_time, available_end_time, images, is_verified)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-                    $13, $14, $15, $16, $17, $18)
+                    $13, $14, $15, $16, $17, $18, $19)
             RETURNING *`,
             [
                 userId, title, description, type, customType || null, 
                 parsedPrice, priceType, parsedCapacity, location, latitude, longitude,
                 amenities, customAmenities, startDate, endDate,
-                available_start_time, available_end_time, imageUrls
+                available_start_time, available_end_time, imageUrls, isVerified
             ]
         );
 
@@ -71,7 +74,6 @@ const createListing = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
-
 const getAllListings = async (req, res) => {
     try {
         const result = await pool.query(`

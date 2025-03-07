@@ -1,0 +1,74 @@
+.analyze-button-container {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: relative; /* Establish positioning context */
+  z-index: 1; /* Lower than modal but higher than other elements */
+}
+
+.analyze-space-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #7e3ff2; /* Softer purple */
+  color: white;
+  border: none;
+  border-radius: 20px; /* Rounded button */
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(126, 63, 242, 0.3); /* Subtle shadow */
+  width: 100%;
+  max-width: 180px;
+}
+
+.analyze-space-button:hover:not(:disabled) {
+  background-color: #6930c3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(126, 63, 242, 0.4);
+}
+
+.analyze-space-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(126, 63, 242, 0.3);
+}
+
+.analyze-space-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.analyze-space-button.analyzing {
+  background-color: #6930c3;
+  cursor: not-allowed;
+}
+
+.analyze-icon {
+  color: white;
+  animation: sparkle 1.5s infinite alternate;
+}
+
+.analyze-icon-spinner {
+  color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes sparkle {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
