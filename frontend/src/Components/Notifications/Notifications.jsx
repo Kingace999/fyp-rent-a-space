@@ -5,6 +5,7 @@ import axios from 'axios';
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import NotificationBell from './NotificationBell';
 import './Notifications.css';
+import Header from '../Headers/Header';
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -146,40 +147,7 @@ const Notifications = () => {
 
   return (
     <div className="notifications-page">
-      <header className="dashboard-header">
-        <div className="logo" onClick={() => navigate('/dashboard')}>
-          Rent-a-Space
-        </div>
-        <nav>
-          <button className="become-host" onClick={() => navigate('/rent-out-space')}>
-            Rent out a space
-          </button>
-          <button className="profile-btn" onClick={() => navigate('/profile')}>
-            Profile
-          </button>
-          <NotificationBell />
-          <ActivitiesDropdown
-            onSelect={(option) => {
-              if (option === 'listings') {
-                navigate('/my-listings');
-              } else if (option === 'bookings') {
-                navigate('/my-bookings');
-              } else if (option === 'notifications') {
-                navigate('/notifications');
-              }
-            }}
-          />
-          <button
-            className="logout-btn"
-            onClick={() => {
-              localStorage.clear();
-              navigate('/');
-            }}
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+      <Header />
 
       <div className="notifications-container">
         <div className="notifications-header">

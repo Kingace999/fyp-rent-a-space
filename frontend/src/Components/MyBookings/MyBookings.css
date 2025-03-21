@@ -156,13 +156,16 @@
 /* Action Buttons */
 .actions {
     display: flex;
-    gap: 10px;
+    gap: 8px; /* Reduced from 10px to 8px */
     margin-top: 10px;
     flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+    justify-content: flex-start; /* Ensures buttons start from the left */
+    align-items: center;
 }
 
+/* You can also adjust the button widths if needed */
 .actions button {
-    padding: 8px 16px;
+    padding: 8px 12px; /* Reduced horizontal padding from 16px to 12px */
     border-radius: 6px;
     border: none;
     cursor: pointer;
@@ -170,6 +173,15 @@
     font-weight: 500;
     transition: background-color 0.2s, transform 0.2s;
     white-space: nowrap; /* Prevents button text from wrapping */
+    min-width: max-content; /* Ensures the button is only as wide as its content */
+}
+
+/* Add a specific style for the message host button to ensure it appears next to other buttons */
+.actions .message-button {
+    background-color: #0ea5e9;
+    color: white;
+    /* Removed margin-left: auto; to fix spacing issue */
+    padding: 8px 12px !important; /* Match the other buttons */
 }
 
 .actions button:first-of-type {
@@ -191,11 +203,6 @@
 .actions .cancel-button:hover {
     background-color: #dc2626;
     transform: translateY(-2px);
-}
-
-.actions .message-button {
-    background-color: #0ea5e9;
-    color: white;
 }
 
 .actions .message-button:hover {
@@ -346,7 +353,14 @@
     }
 
     .actions {
-        flex-direction: column;
+        flex-direction: row; /* Changed from column to row */
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .actions button {
+        flex: 0 0 auto; /* Don't let buttons stretch */
+        width: auto; /* Allow natural width */
     }
 
     .DialogContent {

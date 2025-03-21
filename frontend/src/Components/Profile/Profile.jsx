@@ -3,6 +3,7 @@ import { Camera, Edit, MapPin, Calendar, Phone, Mail, Home, Save, X } from 'luci
 import './Profile.css';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import Header from '../Headers/Header';
 
 const Profile = () => {
   const { userId } = useParams(); // Get userId from URL parameter
@@ -160,7 +161,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="profile-container">
+    <div className="dashboard"> {/* Changed from profile-container to dashboard for consistency */}
+      <Header /> {/* Added Header component */}
+      
       <div className="profile-wrapper">
         {/* Profile Header */}
         <div className="profile-header">

@@ -401,7 +401,7 @@ const handleCancelBooking = async (bookingId) => {
                         : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </span>
                   </p>
-                  <div className="actions">
+                  <div className="actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
     <button onClick={() => handleViewDetails(booking)}>
         View Details
     </button>
@@ -414,7 +414,6 @@ const handleCancelBooking = async (bookingId) => {
                     listing={listings[booking.listing_id]}
                     onUpdate={handleBookingUpdate}
                 />
-                {/* Keep original classes and remove the wrapping div */}
                 <button 
                     className="cancel-button"
                     onClick={() => handleCancelClick(booking)}

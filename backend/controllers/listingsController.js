@@ -76,11 +76,67 @@ const createListing = async (req, res) => {
 };
 const getAllListings = async (req, res) => {
     try {
-        const result = await pool.query(`
-            SELECT * FROM listings
-            ORDER BY created_at DESC;
-        `);
-        res.status(200).json(result.rows);
+        // Get pagination parameters from query string
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 9;
+        const skip = (page - 1) * limit;
+        
+        // Build filter conditions based on query parameters
+        const filterConditions = [];
+        const filterValues = [];
+        let paramCount = 1;
+        
+        // Filter by space type if provided
+        if (req.query.spaceType) {
+            filterConditions.push(`type = $${paramCount}`);
+            filterValues.push(req.query.spaceType);
+            paramCount++;
+        }
+        
+        // Filter by price range if provided
+        if (req.query.maxPrice) {
+            filterConditions.push(`price <= $${paramCount}`);
+            filterValues.push(parseFloat(req.query.maxPrice));
+            paramCount++;
+        }
+        
+        // Build the WHERE clause if there are any filters
+        const whereClause = filterConditions.length > 0 
+            ? `WHERE ${filterConditions.join(' AND ')}` 
+            : '';
+        
+        // Get total count for pagination metadata
+        const countQuery = `
+            SELECT COUNT(*) as total 
+            FROM listings 
+            ${whereClause}
+        `;
+        
+        const countResult = await pool.query(countQuery, filterValues);
+        const total = parseInt(countResult.rows[0].total);
+        
+        // Fetch the listings with pagination
+        const listingsQuery = `
+            SELECT * 
+            FROM listings 
+            ${whereClause}
+            ORDER BY created_at DESC
+            LIMIT $${paramCount} OFFSET $${paramCount + 1}
+        `;
+        
+        const result = await pool.query(
+            listingsQuery, 
+            [...filterValues, limit, skip]
+        );
+        
+        // Return data with pagination metadata
+        res.status(200).json({
+            listings: result.rows,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+            hasMore: skip + result.rows.length < total
+        });
     } catch (error) {
         console.error('Error fetching listings:', error);
         res.status(500).json({ message: 'Server error' });

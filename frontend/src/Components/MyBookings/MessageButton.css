@@ -2,7 +2,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 8px 12px; /* Reduced from 16px */
     border-radius: 6px;
     border: none;
     cursor: pointer;
@@ -11,6 +11,7 @@
     background-color: #0ea5e9;
     color: white;
     transition: background-color 0.2s, transform 0.2s;
+    margin-left: 0 !important; /* Force override any margin-left */
 }
 
 .message-button:hover:not(:disabled) {
@@ -50,7 +51,7 @@
 
 @media (max-width: 768px) {
     .message-button {
-        width: 100%;
+        width: auto; /* Changed from 100% to auto */
         justify-content: center;
     }
 }

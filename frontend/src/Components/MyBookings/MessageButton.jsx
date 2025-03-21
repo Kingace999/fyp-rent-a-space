@@ -72,6 +72,7 @@ const MessageButton = ({ booking }) => {
       className={`message-button ${isLoading ? 'loading' : ''}`}
       onClick={handleMessageClick}
       disabled={isLoading}
+      style={{ marginLeft: 0 }} // Add inline style to ensure no margin
     >
       {isLoading ? (
         <>

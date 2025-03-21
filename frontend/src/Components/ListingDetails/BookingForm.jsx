@@ -4,6 +4,7 @@ import { Calendar, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import './BookingForm.css';
 import Payments from '../Payments/Payments';
+import ReactDOM from 'react-dom';
 
 
 const BookingForm = ({ listing, onSubmit }) => {
@@ -591,7 +592,7 @@ const BookingForm = ({ listing, onSubmit }) => {
         </div>
       </div>
    
-      {showPayment && (
+      {showPayment && ReactDOM.createPortal(
   <div className="payment-overlay" onClick={() => setShowPayment(false)}>
     <div className="payment-modal" onClick={(e) => e.stopPropagation()}>
       <Payments 
@@ -613,17 +614,16 @@ const BookingForm = ({ listing, onSubmit }) => {
             const errorMessage = error || 'Payment failed. Please try again.';
             setPaymentError(errorMessage);
             setShowPayment(false);
-            // Hide error message after 3 seconds
             setTimeout(() => {
               setPaymentError(null);
-              // Reset payment form
               setShowPayment(true);
             }, 3000);
           }
         }}
       />
     </div>
-  </div>
+  </div>,
+  document.body
 )}
       {paymentError && !showPayment && (
   <div className="payment-error-overlay">

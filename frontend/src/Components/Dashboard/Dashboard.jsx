@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Users, Heart, Eye, Clock, DollarSign, X } from 'lucide-react';
+import { Search, MapPin, Calendar, Users, Heart, Eye, Clock, DollarSign, X, Star} from 'lucide-react';
 import './Dashboard.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ActivitiesDropdown from './ActivitiesDropdown';
 import Header from '../Headers/Header';
+import ReviewStars from '../Reviews/ReviewStars'; 
+
+
+
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [listings, setListings] = useState([]);
   const [filteredListings, setFilteredListings] = useState([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [filters, setFilters] = useState({
     spaceType: '',
     minCapacity: 0,
@@ -26,14 +31,49 @@ const Dashboard = () => {
   const [favorites, setFavorites] = useState([]);
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const ITEMS_PER_PAGE = 9; // Adjust as needed
 
-  const fetchListings = async () => {
+  // Updated fetchListings function for pagination
+  const fetchListings = async (pageNum = 1) => {
     try {
-      const response = await axios.get('http://localhost:5000/listings');
-      setListings(response.data);
-      setFilteredListings(response.data);
+      setIsLoading(true);
+      
+      // Create URL with query parameters for filtering
+      let url = `http://localhost:5000/listings?page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
+      
+      // Add filter parameters if they exist
+      if (filters.spaceType) {
+        url += `&spaceType=${filters.spaceType}`;
+      }
+      
+      if (filters.maxPrice) {
+        url += `&maxPrice=${filters.maxPrice}`;
+      }
+      
+      const response = await axios.get(url);
+      
+      // Handle response data format
+      if (Array.isArray(response.data)) {
+        // Old API format (array of listings)
+        setListings(response.data);
+        setFilteredListings(response.data);
+        setTotalPages(Math.ceil(response.data.length / ITEMS_PER_PAGE));
+      } else {
+        // New API format (object with listings and pagination metadata)
+        setListings(response.data.listings || []);
+        setFilteredListings(response.data.listings || []);
+        setTotalPages(response.data.totalPages || 1);
+      }
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching listings:', error);
+      setIsLoading(false);
     }
   };
 
@@ -61,8 +101,8 @@ const Dashboard = () => {
     };
 
     fetchUserData();
-    fetchListings();
-  }, [navigate]);
+    fetchListings(currentPage);
+  }, [navigate, currentPage]);
 
   const isTimeInRange = (startTime, endTime, availableStartTime, availableEndTime) => {
     if (!startTime || !endTime || !availableStartTime || !availableEndTime) return true;
@@ -156,11 +196,80 @@ const Dashboard = () => {
     setSearchTerm(e.target.value);
   };
 
+  useEffect(() => {
+    const fetchReviewsData = async () => {
+      if (!filteredListings.length) return;
+      
+      try {
+        // Create a new array to hold the updated listings
+        const updatedListings = [];
+        let hasChanges = false;
+        
+        // Process each listing
+        for (const listing of filteredListings) {
+          const listingCopy = { ...listing };
+          
+          // Only fetch reviews if they haven't been fetched yet
+          if (listingCopy.averageRating === undefined) {
+            try {
+              const response = await axios.get(`http://localhost:5000/reviews/listing/${listingCopy.id}`);
+              
+              if (response.data) {
+                const avgRating = parseFloat(response.data.averageRating);
+                listingCopy.averageRating = isNaN(avgRating) ? 0 : avgRating;
+                listingCopy.reviewCount = Number(response.data.totalReviews) || 0;
+                hasChanges = true;
+                
+                console.log(`Listing ${listingCopy.id} - average rating:`, response.data.averageRating, 'converted to:', listingCopy.averageRating);
+              }
+            } catch (error) {
+              console.error(`Error fetching reviews for listing ${listingCopy.id}:`, error);
+              listingCopy.averageRating = 0;
+              listingCopy.reviewCount = 0;
+              hasChanges = true;
+            }
+          }
+          
+          updatedListings.push(listingCopy);
+        }
+        
+        // Only update state if changes were made
+        if (hasChanges) {
+          setFilteredListings(updatedListings);
+        }
+        
+        setReviewsLoaded(true);
+      } catch (error) {
+        console.error('Error fetching reviews data:', error);
+      }
+    };
+  
+    if (!reviewsLoaded) {
+      fetchReviewsData();
+    }
+  }, [reviewsLoaded, filteredListings.length]); // Changed dependency array
+  // Add this useEffect to reset reviewsLoaded when filtered listings change
+  useEffect(() => {
+    setReviewsLoaded(false);
+  }, [searchTerm, filters]);
+  // Add this function to your component
+useEffect(() => {
+  // Check if we have listings but no reviews yet
+  if (filteredListings.length > 0 && !filteredListings.some(listing => listing.averageRating !== undefined)) {
+    setReviewsLoaded(false);
+  }
+}, [filteredListings]);
+// Only run when the number of filtered listings changes
   const handleFilterChange = (filterName, value) => {
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
     setFilters((prev) => ({
       ...prev,
       [filterName]: value,
     }));
+    
+    // Fetch listings with the new filter
+    fetchListings(1);
   };
 
   const toggleFavorite = (spaceId) => {
@@ -168,6 +277,77 @@ const Dashboard = () => {
       prev.includes(spaceId)
         ? prev.filter((id) => id !== spaceId)
         : [...prev, spaceId]
+    );
+  };
+
+  // Function to handle page changes
+  const handlePageChange = (pageNum) => {
+    setCurrentPage(pageNum);
+    // fetchListings is called via useEffect when currentPage changes
+    window.scrollTo(0, 0); // Scroll to top when changing pages
+  };
+
+  // Pagination component
+  const Pagination = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return (
+      <div className="pagination">
+        <button 
+          className="pagination-btn" 
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1 || isLoading}
+        >
+          Previous
+        </button>
+        
+        {startPage > 1 && (
+          <>
+            <button className="pagination-btn" onClick={() => handlePageChange(1)}>1</button>
+            {startPage > 2 && <span className="pagination-ellipsis">...</span>}
+          </>
+        )}
+        
+        {pageNumbers.map(num => (
+          <button
+            key={num}
+            className={`pagination-btn ${currentPage === num ? 'active' : ''}`}
+            onClick={() => handlePageChange(num)}
+            disabled={isLoading}
+          >
+            {num}
+          </button>
+        ))}
+        
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="pagination-ellipsis">...</span>}
+            <button className="pagination-btn" onClick={() => handlePageChange(totalPages)} disabled={isLoading}>
+              {totalPages}
+            </button>
+          </>
+        )}
+        
+        <button 
+          className="pagination-btn" 
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || isLoading}
+        >
+          Next
+        </button>
+      </div>
     );
   };
 
@@ -329,69 +509,110 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="results-grid">
-        {filteredListings.map((listing) => (
-          <div 
-          key={listing.id} 
-          className="space-card"
-          onClick={() => navigate(`/listing/${listing.id}`)}
-          style={{ cursor: 'pointer' }}
-        >
-            <div className="space-card-overlay">
-              <button
-                className={`favorite-btn ${favorites.includes(listing.id) ? 'favorited' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();  // Add this
-                  toggleFavorite(listing.id);
-                }}
-              >
-                <Heart size={16} />
-              </button>
-              <button className="quick-view-btn"
-              onClick={(e) => e.stopPropagation()}>
-                <Eye size={16} />
-              </button>
-            </div>
-            <img 
-              src={listing.images && listing.images[0] ? `http://localhost:5000${listing.images[0]}` : '/placeholder.jpg'} 
-              alt={listing.title} 
-              className="space-image" 
-            />
-            <div className="space-details">
-              <h3>{listing.title}</h3>
-              <p className="location">
-                <MapPin size={16} />
-                {listing.location}
-              </p>
-              <div className="space-meta">
-                <span>
-                  <Users size={16} />
-                  {listing.capacity} people
-                </span>
-                <span className="price">${listing.price}/{listing.price_type}</span>
+      {isLoading ? (
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading spaces...</p>
+        </div>
+      ) : (
+        <>
+          <div className="results-grid">
+            {filteredListings.length > 0 ? (
+              filteredListings.map((listing) => (
+                <div 
+                  key={listing.id} 
+                  className="space-card"
+                  onClick={() => navigate(`/listing/${listing.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="space-card-overlay">
+                    <button
+                      className={`favorite-btn ${favorites.includes(listing.id) ? 'favorited' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(listing.id);
+                      }}
+                    >
+                      <Heart size={16} />
+                    </button>
+                    <button 
+                      className="quick-view-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Eye size={16} />
+                    </button>
+                  </div>
+                  <img 
+                    src={listing.images && listing.images[0] ? `http://localhost:5000${listing.images[0]}` : '/placeholder.jpg'} 
+                    alt={listing.title} 
+                    className="space-image" 
+                  />
+                  <div className="space-details">
+                  <h3>{listing.title}</h3>
+<div className="simple-rating">
+  <Star className="rating-star" size={14} />
+  <span className="rating-number">
+    {listing.averageRating ? listing.averageRating.toFixed(1) : '0.0'}
+  </span>
+  <span className="review-count">
+    ({listing.reviewCount || 0} reviews)
+  </span>
+</div>
+<p className="location">
+  <MapPin size={16} />
+  {listing.location}
+</p>
+                    <div className="space-meta">
+                      <span>
+                        <Users size={16} />
+                        {listing.capacity} people
+                      </span>
+                      <span className="price">${listing.price}/{listing.price_type}</span>
+                    </div>
+                    <div className="amenities-list">
+  {listing.amenities && listing.amenities.length > 0 ? (
+    // Always show exactly 3 amenities, no "more" indicator
+    Array(3).fill().map((_, idx) => {
+      if (idx < listing.amenities.length) {
+        // Show actual amenity if it exists
+        return <span key={`amenity-${idx}`} className="amenity-tag">{listing.amenities[idx]}</span>;
+      } else {
+        // Show empty placeholder if fewer than 3 amenities
+        return <span key={`empty-${idx}`} className="amenity-tag empty"></span>;
+      }
+    })
+  ) : (
+    // If no amenities, show 3 empty placeholders
+    Array(3).fill().map((_, idx) => (
+      <span key={`empty-${idx}`} className="amenity-tag empty"></span>
+    ))
+  )}
+</div>
+                    <p className="description">{listing.description.substring(0, 100)}...</p>
+                    <div className="availability-info">
+                      <Calendar size={16} />
+                      <span>Available: {new Date(listing.start_date).toLocaleDateString()} - {new Date(listing.end_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="time-info">
+                      <Clock size={16} />
+                      <span>{listing.available_start_time} - {listing.available_end_time}</span>
+                    </div>
+                    <button className="book-button">Book Now</button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-results">
+                <p>No spaces match your search criteria. Try adjusting your filters.</p>
               </div>
-              <div className="amenities-list">
-                {listing.amenities && listing.amenities.slice(0, 3).map((amenity) => (
-                  <span key={amenity} className="amenity-tag">{amenity}</span>
-                ))}
-                {listing.amenities && listing.amenities.length > 3 && (
-                  <span className="amenity-tag more">+{listing.amenities.length - 3} more</span>
-                )}
-              </div>
-              <p className="description">{listing.description.substring(0, 100)}...</p>
-              <div className="availability-info">
-                <Calendar size={16} />
-                <span>Available: {new Date(listing.start_date).toLocaleDateString()} - {new Date(listing.end_date).toLocaleDateString()}</span>
-              </div>
-              <div className="time-info">
-                <Clock size={16} />
-                <span>{listing.available_start_time} - {listing.available_end_time}</span>
-              </div>
-              <button className="book-button">Book Now</button>
-            </div>
+            )}
           </div>
-        ))}
-      </div>
+          
+          {filteredListings.length > 0 && totalPages > 1 && (
+            <Pagination />
+          )}
+        </>
+      )}
     </div>
   );
 };
