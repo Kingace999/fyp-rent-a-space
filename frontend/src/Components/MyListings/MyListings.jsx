@@ -3,12 +3,14 @@ import { MapPin, Calendar, Users, Clock, X, Loader2 } from 'lucide-react';
 import './MyListings.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import Header from '../Headers/Header';
 import ManageGuests from './manageGuests';
 
 const MyListings = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   
   // Constants
   const spaceTypes = [
@@ -53,23 +55,19 @@ const MyListings = () => {
 
   // Fetch user listings
   const fetchUserListings = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/');
-      return;
-    }
+    if (!isAuthenticated || !accessToken) return;
 
     try {
       const response = await axios.get('http://localhost:5000/listings/user', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setUserListings(response.data);
     } catch (error) {
       console.error('Error fetching user listings:', error);
       if (error.response?.status === 401) {
-        localStorage.clear();
+        // Let the auth context handle this situation
         navigate('/');
       }
     }
@@ -77,7 +75,8 @@ const MyListings = () => {
 
   useEffect(() => {
     fetchUserListings();
-  }, [navigate]);
+  }, [navigate, isAuthenticated, accessToken]);
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -204,11 +203,10 @@ const MyListings = () => {
   };
   
   const handleConfirmDelete = async () => {
-    const token = localStorage.getItem('token');
     try {
       await axios.delete(`http://localhost:5000/listings/${listingToDelete}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setMessage({ type: 'success', text: 'Listing deleted successfully!' });
@@ -222,7 +220,6 @@ const MyListings = () => {
         text: error.response?.data?.message || 'Failed to delete listing. Please try again.'
       });
       if (error.response?.status === 401) {
-        localStorage.clear();
         navigate('/');
       }
     }
@@ -363,8 +360,7 @@ const handleSave = async () => {
   }
   
   setIsSubmitting(true);
-  const token = localStorage.getItem('token');
-  if (!currentListing || !token) return;
+  if (!currentListing || !accessToken) return;
 
   try {
     const formData = new FormData();
@@ -415,7 +411,7 @@ const handleSave = async () => {
       formData,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data'
         }
       }
@@ -445,7 +441,6 @@ const handleSave = async () => {
     });
     
     if (error.response?.status === 401) {
-      localStorage.clear();
       navigate('/');
     }
   } finally {

@@ -13,6 +13,31 @@ const sendMessage = async (req, res) => {
             });
         }
 
+        // New: User Existence Check
+        const userCheck = await client.query(
+            'SELECT id FROM users WHERE id = $1',
+            [receiverId]
+        );
+        if (userCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: 'Receiver user does not exist'
+            });
+        }
+
+        // New: Message Length Validation
+        if (content.length > 5000) {
+            return res.status(400).json({
+                message: 'Message exceeds maximum length of 5000 characters'
+            });
+        }
+
+        // New: Simple XSS Prevention
+        const sanitizedContent = content
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+
         // Begin transaction
         await client.query('BEGIN');
 
@@ -48,13 +73,13 @@ const sendMessage = async (req, res) => {
             [senderId]
         );
 
-        // Insert message with context
+        // Insert message with context using sanitizedContent
         const result = await client.query(
             `INSERT INTO messages 
              (sender_id, receiver_id, content, listing_id, booking_id)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [senderId, receiverId, content, listingId || null, bookingId || null]
+            [senderId, receiverId, sanitizedContent, listingId || null, bookingId || null]
         );
 
         // Create notification with context
@@ -86,11 +111,18 @@ const sendMessage = async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error sending message:', error);
+        
+        // More specific error handling
+        if (error.code === '23503') {  // Foreign key violation
+            return res.status(400).json({ message: 'Invalid receiver or context' });
+        }
+        
         res.status(500).json({ message: 'Server error' });
     } finally {
         client.release();
     }
 };
+
 
 const getConversation = async (req, res) => {
     try {

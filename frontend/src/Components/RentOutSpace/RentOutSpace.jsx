@@ -5,11 +5,13 @@ import LocationPicker from './LocationPicker';
 import DocumentVerificationModal from '../Verification/DocumentVerificationModal';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import AnalyzeSpaceButton from './AnalyzeSpaceButton';
 import AnalysisResultModal from './AnalysisResultModal';
 
 const RentOutSpace = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [spaceDetails, setSpaceDetails] = useState({
     title: '',
     description: '',
@@ -288,6 +290,11 @@ const RentOutSpace = () => {
 
   // New function to handle the actual form submission after verification
   const submitFormAfterVerification = async () => {
+    if (!isAuthenticated || !accessToken) {
+      setMessage({ type: 'error', text: 'Authentication token not found. Please log in again.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const coordinates = {
@@ -331,16 +338,9 @@ const RentOutSpace = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setMessage({ type: 'error', text: 'Authentication token not found. Please log in again.' });
-        setIsSubmitting(false);
-        return;
-      }
-
       const response = await axios.post('http://localhost:5000/listings', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -598,7 +598,6 @@ const RentOutSpace = () => {
                 Click to upload images (max 5)
               </div>
             </div>
-            {/* Replace this section in your RentOutSpace.jsx file */}
             {images.length > 0 && (
   <div className="image-preview-container">
     <div className="image-previews-grid">

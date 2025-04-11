@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LoginSignup.css';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 import user_icon from '../Assests/person.png';
 import password_icon from '../Assests/password.png';
@@ -12,50 +12,69 @@ const LoginSignup = () => {
   const [name, setName] = useState(''); // Tracks user name for Sign Up
   const [email, setEmail] = useState(''); // Tracks email input
   const [password, setPassword] = useState(''); // Tracks password input
-  const [message, setMessage] = useState(''); // Feedback message for user (e.g., success/error)
-  const [loading, setLoading] = useState(false); // Tracks loading state during API calls
-
+  const [message, setMessage] = useState(''); // Feedback message for user
+  const [errors, setErrors] = useState({}); // Form validation errors
+  
+  const { login, signup, loading, error } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the redirect path from location state or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  // Form validation
+  // Form validation
+const validateForm = () => {
+  const newErrors = {};
+  
+  if (action === 'Sign Up' && !name.trim()) {
+    newErrors.name = 'Name is required';
+  }
+  
+  if (!email.trim()) {
+    newErrors.email = 'Email is required';
+  } else if (!/\S+@\S+\.\S+/.test(email)) {
+    newErrors.email = 'Email is invalid';
+  }
+  
+  if (!password) {
+    newErrors.password = 'Password is required';
+  } else if (action === 'Sign Up') {
+    if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/[A-Z]/.test(password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter';
+    } else if (!/[0-9]/.test(password)) {
+      newErrors.password = 'Password must contain at least one number';
+    } else if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(password)) {
+      newErrors.password = 'Password must contain at least one special character';
+    }
+  }
+  
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleSubmit = async () => {
-    setLoading(true);
     setMessage('');
-
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+    
     try {
       if (action === 'Sign Up') {
-        const response = await axios.post('http://localhost:5000/auth/signup', {
-          name,
-          email,
-          password,
-        });
-
-        setMessage(response.data.message); // Show success message
-        const { token, user } = response.data;
-
-        // Store token in localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        navigate('/dashboard'); // Redirect to Dashboard
-      } else if (action === 'Login') {
-        const response = await axios.post('http://localhost:5000/auth/login', {
-          email,
-          password,
-        });
-
-        setMessage(`Welcome, ${response.data.user.name}`);
-        const { token, user } = response.data;
-
-        // Store token in localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        navigate('/dashboard'); // Redirect to Dashboard
+        await signup(name, email, password);
+        setMessage('Account created successfully!');
+        navigate(from, { replace: true });
+      } else {
+        await login(email, password);
+        setMessage('Login successful!');
+        navigate(from, { replace: true });
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || 'An error occurred.');
-    } finally {
-      setLoading(false);
+      setMessage(error.response?.data?.message || 'An error occurred');
     }
   };
 
@@ -75,6 +94,7 @@ const LoginSignup = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+            {errors.name && <span className="error">{errors.name}</span>}
           </div>
         )}
         <div className="input">
@@ -85,6 +105,7 @@ const LoginSignup = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {errors.email && <span className="error">{errors.email}</span>}
         </div>
         <div className="input">
           <img src={password_icon} alt="Password Icon" />
@@ -94,9 +115,11 @@ const LoginSignup = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {errors.password && <span className="error">{errors.password}</span>}
         </div>
       </div>
       {message && <div className="message">{message}</div>}
+      {error && <div className="error-message">{error}</div>}
       {action === "Login" && (
         <div className="forgot-password">
           Lost Password? <span>Click Here!</span>
@@ -106,13 +129,21 @@ const LoginSignup = () => {
         <div className="button-row">
           <div
             className={action === "Login" ? "submit gray" : "submit"}
-            onClick={() => setAction("Sign Up")}
+            onClick={() => {
+              setAction("Sign Up");
+              setMessage('');
+              setErrors({});
+            }}
           >
             Sign Up
           </div>
           <div
             className={action === "Sign Up" ? "submit gray" : "submit"}
-            onClick={() => setAction("Login")}
+            onClick={() => {
+              setAction("Login");
+              setMessage('');
+              setErrors({});
+            }}
           >
             Login
           </div>

@@ -1,0 +1,15 @@
+{
+    "name": "e2e-tests",
+    "version": "1.0.0",
+    "description": "End-to-end tests for rent-a-space application",
+    "scripts": {
+      "init-db": "node scripts/init-test-db.js",
+      "test": "npm run init-db && npx playwright test",
+      "test:auth": "npm run init-db && npx playwright test auth/"
+    },
+    "dependencies": {
+      "bcrypt": "^5.1.0",
+      "dotenv": "^16.0.3",
+      "pg": "^8.10.0"
+    }
+  }

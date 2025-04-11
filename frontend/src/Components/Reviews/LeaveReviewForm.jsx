@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './LeaveReviewForm.css';
 import ReviewStars from './ReviewStars';
 import { X, AlertCircle, Loader2, Star } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 
 const LeaveReviewForm = ({ 
   isOpen, 
@@ -11,6 +12,7 @@ const LeaveReviewForm = ({
   bookingId,
   existingReview 
 }) => {
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [rating, setRating] = useState(existingReview ? existingReview.rating : 5);
   const [review, setReview] = useState(existingReview ? existingReview.comment : '');
   const [error, setError] = useState('');
@@ -31,6 +33,11 @@ const LeaveReviewForm = ({
   };
 
   const validateForm = () => {
+    if (!isAuthenticated || !accessToken) {
+      setError('You must be logged in to submit a review');
+      return false;
+    }
+    
     if (rating === 0) {
       setError('Please select a rating for your experience');
       return false;
@@ -52,12 +59,11 @@ const LeaveReviewForm = ({
   const handleDelete = async () => {
     try {
       setIsSubmitting(true);
-      const token = localStorage.getItem('token');
       
       const response = await fetch(`http://localhost:5000/reviews/${existingReview.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
@@ -77,13 +83,12 @@ const LeaveReviewForm = ({
   const confirmSubmit = async () => {
     try {
       setIsSubmitting(true);
-      const token = localStorage.getItem('token');
       
       const response = await fetch('http://localhost:5000/reviews', {
         method: existingReview ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           listing_id: listingId,

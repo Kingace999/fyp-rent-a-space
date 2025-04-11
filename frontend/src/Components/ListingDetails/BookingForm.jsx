@@ -5,6 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import './BookingForm.css';
 import Payments from '../Payments/Payments';
 import ReactDOM from 'react-dom';
+import { useAuth } from '../../context/AuthContext';
 
 
 const BookingForm = ({ listing, onSubmit }) => {
@@ -19,14 +20,15 @@ const BookingForm = ({ listing, onSubmit }) => {
   const [existingBookings, setExistingBookings] = useState([]);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+  
 
-
+  const { accessToken } = useAuth();
 
   const fetchExistingBookings = async () => {
     try {
       const response = await fetch(`http://localhost:5000/bookings/listing/${listing.id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       if (!response.ok) {
@@ -42,10 +44,10 @@ const BookingForm = ({ listing, onSubmit }) => {
 
   // Fetch existing bookings for this listing
   useEffect(() => {
-    if (listing?.id) {
+    if (listing?.id && accessToken) {
       fetchExistingBookings();
     }
-  }, [listing?.id]);
+  }, [listing?.id, accessToken]);
 
   // Calculate total based on selected dates/times
   const calculateTotal = useMemo(() => {
@@ -130,15 +132,24 @@ const BookingForm = ({ listing, onSubmit }) => {
   const availableStartTime = parseTime(listing?.available_start_time);
   const availableEndTime = parseTime(listing?.available_end_time);
 
-  // Check if a date and time slot is already booked
+  // Check if a date and time slot is already booked or in the past
   const isDateBooked = (date) => {
     if (!date) return false;
+    
+    // Check if date is in the past
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
     
     const selectedDate = new Date(date);
     selectedDate.setHours(0, 0, 0, 0);
     
+    // Return true (not available) if date is in the past
+    if (selectedDate < currentDate) {
+      return true;
+    }
+    
+    // Original check for existing bookings
     if (listing.price_type === 'day') {
-      // For daily bookings, check if any part of the day overlaps
       return existingBookings.some(booking => {
         const bookingStart = new Date(booking.booking_start);
         const bookingEnd = new Date(booking.booking_end);

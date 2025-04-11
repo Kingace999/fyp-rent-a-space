@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Search, MoreVertical, Send, Check, CheckCheck, Loader } from 'lucide-react';
 import Header from '../Headers/Header';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Add this import
 import './Messages.css';
 
 const BACKEND_URL = 'http://localhost:5000';
@@ -49,6 +50,7 @@ const TypingIndicator = () => (
 
 const Messages = () => {
   const location = useLocation();
+  const { accessToken, currentUser } = useAuth(); // Add this line
   const [initialized, setInitialized] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
@@ -101,14 +103,12 @@ const Messages = () => {
         const messageContent = messageQueue[0];
         
         try {
-          const token = localStorage.getItem('token');
-          
           await axios.post('http://localhost:5000/messages', {
             receiverId: selectedConversation.other_user_id,
             content: messageContent,
             listingId: location.state?.listingId
           }, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
           });
 
           // Remove this message from queue
@@ -121,7 +121,7 @@ const Messages = () => {
           const newMessage = {
             id: Date.now().toString(),
             content: messageContent,
-            sender_id: JSON.parse(localStorage.getItem('user'))?.id,
+            sender_id: currentUser?.id, // Use currentUser from context
             created_at: new Date().toISOString(),
             is_read: false
           };
@@ -138,7 +138,7 @@ const Messages = () => {
     };
 
     processMessageQueue();
-  }, [messageQueue, selectedConversation]);
+  }, [messageQueue, selectedConversation, accessToken, currentUser]);
 
   useEffect(() => {
     if (!initialized || !location.state?.receiverId) return;
@@ -181,9 +181,8 @@ const Messages = () => {
 
   const fetchConversations = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:5000/messages/conversations', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
       });
       setConversations(response.data);
       setError(null);
@@ -198,10 +197,9 @@ const Messages = () => {
     
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
       
       const response = await axios.get(`http://localhost:5000/messages/conversation/${receiverId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
       });
       
       setMessages(response.data);
@@ -229,7 +227,7 @@ const Messages = () => {
       const tempMessage = {
         id: 'temp-' + Date.now(),
         content: message,
-        sender_id: JSON.parse(localStorage.getItem('user'))?.id,
+        sender_id: currentUser?.id, // Use currentUser from context
         created_at: new Date().toISOString(),
         is_read: false
       };
@@ -248,9 +246,8 @@ const Messages = () => {
     setSelectedConversation(conversation);
     if (!conversation.is_read) {
       try {
-        const token = localStorage.getItem('token');
         await axios.put(`http://localhost:5000/messages/${conversation.id}/read`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
         });
         fetchConversations();
       } catch (err) {
@@ -354,17 +351,7 @@ const Messages = () => {
                   ) : (
                     <>
                       {messages.map((message) => {
-                        const userStr = localStorage.getItem('user');
-                        let currentUserId = null;
-                        if (userStr) {
-                          try {
-                            const user = JSON.parse(userStr);
-                            currentUserId = user.id;
-                          } catch (err) {
-                            console.error('Error parsing user data:', err);
-                          }
-                        }
-                        const isSentByMe = currentUserId && message.sender_id === currentUserId;
+                        const isSentByMe = currentUser && message.sender_id === currentUser.id;
                         const isTemp = message.id.toString().startsWith('temp-');
                         
                         return (

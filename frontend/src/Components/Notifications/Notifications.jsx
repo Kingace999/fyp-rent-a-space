@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, BookOpen, Calendar, CreditCard, MessageSquare, X } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import NotificationBell from './NotificationBell';
 import './Notifications.css';
@@ -9,6 +10,7 @@ import Header from '../Headers/Header';
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -20,11 +22,13 @@ const Notifications = () => {
   };
 
   const fetchNotifications = async () => {
+    if (!isAuthenticated || !accessToken) return;
+    
     try {
       setLoading(true);
       const response = await axios.get('http://localhost:5000/notifications', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       setNotifications(response.data);
@@ -37,14 +41,14 @@ const Notifications = () => {
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [isAuthenticated, accessToken]); // Added dependencies
 
   const markAsRead = async (e, id) => {
     e.stopPropagation();
     try {
       await axios.put(`http://localhost:5000/notifications/${id}/read`, null, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       fetchNotifications();
@@ -57,7 +61,7 @@ const Notifications = () => {
     try {
       await axios.put('http://localhost:5000/notifications/mark-all-read', null, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       fetchNotifications();
@@ -71,7 +75,7 @@ const Notifications = () => {
     try {
       await axios.delete(`http://localhost:5000/notifications/${id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       fetchNotifications();

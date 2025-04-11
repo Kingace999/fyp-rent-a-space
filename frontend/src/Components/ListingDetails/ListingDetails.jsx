@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Star
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Add this import
 import './ListingDetails.css';
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import BookingForm from './BookingForm';
@@ -21,6 +22,7 @@ import MessageHostButton from './MessageHostButton';
 const ListingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { accessToken } = useAuth(); // Add this line to use auth context
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,10 +38,10 @@ const ListingDetails = () => {
   useEffect(() => {
     const fetchListingDetails = async () => {
       try {
-        // First fetch listing details
+        // First fetch listing details - Use accessToken from auth context
         const listingResponse = await fetch(`http://localhost:5000/listings/${id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
   
@@ -72,8 +74,10 @@ const ListingDetails = () => {
       }
     };
   
-    fetchListingDetails();
-  }, [id]);
+    if (accessToken) {
+      fetchListingDetails();
+    }
+  }, [id, accessToken]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
@@ -87,10 +91,7 @@ const ListingDetails = () => {
     );
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
-  };
+  // Remove the handleLogout function as it's now handled by the Header component
 
   if (loading) return (
     <div className="loading-container">

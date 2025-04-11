@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { MessageCircle, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import './MessageButton.css';
 
 const MessageButton = ({ booking }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
 
   const handleMessageClick = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        navigate('/login');
+      // Check authentication using the auth context
+      if (!isAuthenticated || !accessToken) {
+        navigate('/');
         return;
       }
 
@@ -23,7 +24,7 @@ const MessageButton = ({ booking }) => {
         'http://localhost:5000/messages/initiate-booking',
         { bookingId: booking.id },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         }
       );
 
@@ -40,7 +41,7 @@ const MessageButton = ({ booking }) => {
             listingId: booking.listing_id
           },
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${accessToken}` }
           }
         );
       }
@@ -58,7 +59,7 @@ const MessageButton = ({ booking }) => {
     } catch (error) {
       console.error('Error initiating conversation:', error);
       if (error.response?.status === 401) {
-        navigate('/login');
+        navigate('/');
       } else {
         alert("Failed to start conversation. Please try again.");
       }

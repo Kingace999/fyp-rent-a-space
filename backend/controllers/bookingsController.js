@@ -79,6 +79,7 @@ const createBooking = async (req, res) => {
         }
 
         // Check for existing bookings in the same time period
+        
         const conflictCheck = await pool.query(
             `SELECT id FROM bookings 
              WHERE listing_id = $1 

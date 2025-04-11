@@ -73,6 +73,9 @@ const createPaymentIntent = async (req, res) => {
         if (!amount || !currency || (!listing_id && !booking_id) || !startDate) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
+        if (listing_id && (!Number.isInteger(Number(listing_id)) || Number(listing_id) <= 0)) {
+            return res.status(400).json({ message: 'Invalid listing ID format' });
+        }
 
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(amount * 100),
@@ -537,14 +540,14 @@ const processBookingRefund = async (req, res) => {
         console.log('Initial booking check:', bookingCheck.rows);
 
         if (bookingCheck.rows.length === 0) {
-            throw new Error('Booking not found');
+            return res.status(404).json({ message: 'Booking not found' });
         }
 
         const booking = bookingCheck.rows[0];
 
         // Check if booking can be cancelled
-        if (booking.status === 'cancelled') {
-            throw new Error('Booking is already cancelled');
+        if (booking.status === 'cancelled' || booking.status === 'pending_cancellation') {
+            return res.status(409).json({ message: 'Booking is already cancelled or a cancellation is in progress' });
         }
 
         // Get all payments and their current refund status
@@ -779,7 +782,7 @@ const processPartialRefund = async (req, res) => {
         );
 
         if (paymentResult.rows.length === 0) {
-            throw new Error('No unrefunded payment found');
+            return res.status(404).json({ message: 'No unrefunded payment found' });
         }
 
         const latestPayment = paymentResult.rows[0];

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import './PaymentForm.css';
 
 export default function PaymentForm({ 
@@ -17,6 +18,7 @@ export default function PaymentForm({
 }) {
   const stripe = useStripe();
   const elements = useElements();
+  const { accessToken } = useAuth(); // Use auth context
   const [isFormComplete, setIsFormComplete] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -93,7 +95,7 @@ export default function PaymentForm({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(paymentData)
       });

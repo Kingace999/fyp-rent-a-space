@@ -1,11 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Add this import
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import NotificationBell from '../Notifications/NotificationBell';
 import './Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth(); // Add this line to use the auth context
+
+  const handleLogout = async () => {
+    await logout(); // Use the logout function from auth context
+    // No need to navigate as the logout function will redirect
+  };
 
   return (
     <header className="dashboard-header">
@@ -35,10 +42,7 @@ const Header = () => {
         />
         <button
           className="logout-btn"
-          onClick={() => {
-            localStorage.clear();
-            navigate('/');
-          }}
+          onClick={handleLogout}
         >
           Logout
         </button>

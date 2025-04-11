@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, BookOpen, Calendar, CreditCard, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import './NotificationBell.css';
 
 const NotificationBell = () => {
@@ -10,6 +11,7 @@ const NotificationBell = () => {
   const [recentNotifications, setRecentNotifications] = useState([]);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
 
   const getIcon = (type) => {
     switch (type) {
@@ -41,10 +43,12 @@ const NotificationBell = () => {
   };
 
   const fetchUnreadCount = async () => {
+    if (!isAuthenticated || !accessToken) return;
+    
     try {
       const response = await axios.get('http://localhost:5000/notifications/unread', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       setUnreadCount(response.data.count);
@@ -54,10 +58,12 @@ const NotificationBell = () => {
   };
 
   const fetchRecentNotifications = async () => {
+    if (!isAuthenticated || !accessToken) return;
+    
     try {
       const response = await axios.get('http://localhost:5000/notifications?limit=3', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
       setRecentNotifications(response.data);
@@ -80,10 +86,12 @@ const NotificationBell = () => {
   }, []);
 
   useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, accessToken]);
 
   const handleBellClick = async () => {
     await fetchRecentNotifications();

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import './AnalyzeSpaceButton.css';
 import axios from 'axios';
 
@@ -11,12 +12,19 @@ const AnalyzeSpaceButton = ({
   onAnalysisComplete, 
   onAnalysisError 
 }) => {
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAnalyzeClick = async () => {
     if (!image) {
       console.error('No image provided for analysis');
       alert('No image to analyze');
+      return;
+    }
+
+    if (!isAuthenticated || !accessToken) {
+      console.error('Authentication token not found');
+      alert('Authentication token not found. Please log in again.');
       return;
     }
 
@@ -30,16 +38,10 @@ const AnalyzeSpaceButton = ({
       const formData = new FormData();
       formData.append('image', image);
 
-      // Get authentication token
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-
       // Make request to the backend API
       const response = await axios.post('http://localhost:5000/space-analysis/analyze', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data'
         }
       });

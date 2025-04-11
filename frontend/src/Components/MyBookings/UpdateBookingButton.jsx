@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import DatePicker from 'react-datepicker';
 import { Calendar, Clock, X, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import "react-datepicker/dist/react-datepicker.css";
 import './UpdateBookingButton.css';
 import { Elements } from '@stripe/react-stripe-js';
@@ -21,6 +22,8 @@ const BOOKING_RULES = {
 };
 
 const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
+  // Add auth context
+  const { accessToken } = useAuth();
   const [startDate, setStartDate] = useState(new Date(booking.booking_start));
   const [endDate, setEndDate] = useState(new Date(booking.booking_end));
   const [startTime, setStartTime] = useState(new Date(booking.booking_start));
@@ -47,7 +50,7 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
       try {
         const response = await axios.get(
           `http://localhost:5000/bookings/listing/${booking.listing_id}`,
-          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setExistingBookings(response.data.filter(b => b.id !== booking.id));
       } catch (error) {
@@ -58,7 +61,7 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
     if (open && booking?.listing_id) {
       fetchExistingBookings();
     }
-  }, [open, booking?.listing_id, booking.id]);
+  }, [open, booking?.listing_id, booking.id, accessToken]);
 
   // Parse available times from listing
   const parseTime = (timeStr) => {
@@ -491,7 +494,7 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
             newEndDate: isHourly ? endTime.toISOString() : endDate.toISOString()
           },
           {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            headers: { Authorization: `Bearer ${accessToken}` }
           }
         );
 
@@ -511,58 +514,60 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
     } finally {
       setLoading(false);
     }
-};
-const handlePaymentStatus = async (status, error) => {
-  if (status === 'succeeded') {
-    setLoading(true);
-    let attempts = 0;
-    const maxAttempts = 10;
+  };
 
-    const checkBookingStatus = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/bookings/${booking.id}`,
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  const handlePaymentStatus = async (status, error) => {
+    if (status === 'succeeded') {
+      setLoading(true);
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      const checkBookingStatus = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:5000/bookings/${booking.id}`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            }
+          );
+
+          if (response.data.status === 'active' && 
+              new Date(response.data.updated_at) > new Date(booking.updated_at)) {
+            // Booking has been updated
+            setBookingSuccess(true);
+            setShowPayment(false);
+            onUpdate();
+            
+            setTimeout(() => {
+              setBookingSuccess(false);
+              setOpen(false);
+            }, 2000);
+            return;
           }
-        );
 
-        if (response.data.status === 'active' && 
-            new Date(response.data.updated_at) > new Date(booking.updated_at)) {
-          // Booking has been updated
-          setBookingSuccess(true);
-          setShowPayment(false);
-          onUpdate();
-          
-          setTimeout(() => {
-            setBookingSuccess(false);
-            setOpen(false);
-          }, 2000);
-          return;
-        }
-
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(checkBookingStatus, 1000);
-        } else {
-          setError('Update is taking longer than expected. Please check your bookings page.');
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(checkBookingStatus, 1000);
+          } else {
+            setError('Update is taking longer than expected. Please check your bookings page.');
+            setLoading(false);
+          }
+        } catch (err) {
+          setError('Failed to confirm booking update. Please check your bookings page.');
           setLoading(false);
         }
-      } catch (err) {
-        setError('Failed to confirm booking update. Please check your bookings page.');
-        setLoading(false);
-      }
-    };
+      };
 
-    checkBookingStatus();
-  } else {
-    setPaymentError(error || 'Payment failed');
-    setTimeout(() => {
-      setPaymentError(null);
-      setShowPayment(true);
-    }, 3000);
-  }
-};
+      checkBookingStatus();
+    } else {
+      setPaymentError(error || 'Payment failed');
+      setTimeout(() => {
+        setPaymentError(null);
+        setShowPayment(true);
+      }, 3000);
+    }
+  };
+
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>

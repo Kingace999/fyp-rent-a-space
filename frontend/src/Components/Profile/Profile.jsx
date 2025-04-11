@@ -3,10 +3,12 @@ import { Camera, Edit, MapPin, Calendar, Phone, Mail, Home, Save, X } from 'luci
 import './Profile.css';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import Header from '../Headers/Header';
 
 const Profile = () => {
   const { userId } = useParams(); // Get userId from URL parameter
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [isEditing, setIsEditing] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
@@ -28,7 +30,8 @@ const Profile = () => {
   // Fetch profile data from the backend
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const token = localStorage.getItem('token');
+      if (!isAuthenticated || !accessToken) return;
+      
       try {
         let endpoint = 'http://localhost:5000/profile';
         
@@ -42,7 +45,7 @@ const Profile = () => {
         
         const response = await axios.get(endpoint, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${accessToken}`
           }
         });
         
@@ -64,7 +67,7 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, [userId]); // Re-run effect when userId changes
+  }, [userId, isAuthenticated, accessToken]); // Re-run effect when userId or auth state changes
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -88,14 +91,13 @@ const Profile = () => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const token = localStorage.getItem('token');
     try {
       const response = await axios.post(
         'http://localhost:5000/profile/upload-image',
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'multipart/form-data'
           }
         }
@@ -130,7 +132,8 @@ const Profile = () => {
 
   // Save updated profile data
   const handleSave = async () => {
-    const token = localStorage.getItem('token');
+    if (!isAuthenticated || !accessToken) return;
+    
     try {
       const response = await axios.put(
         'http://localhost:5000/profile',
@@ -144,7 +147,7 @@ const Profile = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${accessToken}`
           }
         }
       );

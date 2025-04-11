@@ -3,33 +3,31 @@ import { X, User } from 'lucide-react';
 import './manageGuests.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 
 const ManageGuests = ({ listingId, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { isAuthenticated, accessToken } = useAuth(); // Use auth context
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     // Only fetch data when the modal is open and we have a listing ID
-    if (isOpen && listingId) {
+    if (isOpen && listingId && isAuthenticated) {
       fetchBookings();
     }
-  }, [isOpen, listingId]);
+  }, [isOpen, listingId, isAuthenticated, accessToken]);
 
   const fetchBookings = async () => {
-    setLoading(true);
-    const token = localStorage.getItem('token');
+    if (!isAuthenticated || !accessToken) return;
     
-    if (!token) {
-      navigate('/');
-      return;
-    }
-
+    setLoading(true);
+    
     try {
       const response = await axios.get(`http://localhost:5000/bookings/listing/${listingId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setBookings(response.data);
@@ -39,7 +37,6 @@ const ManageGuests = ({ listingId, isOpen, onClose }) => {
       setError('Failed to load bookings. Please try again.');
       
       if (error.response?.status === 401) {
-        localStorage.clear();
         navigate('/');
       }
     } finally {

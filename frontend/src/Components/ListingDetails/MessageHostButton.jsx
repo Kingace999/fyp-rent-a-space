@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MessageCircle, Loader } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Add this import
 import './MessageHostButton.css';
 
 const MessageHostButton = ({ listingId, listingTitle, hostId }) => {
   const [isMessageLoading, setIsMessageLoading] = useState(false);
   const navigate = useNavigate();
+  const { accessToken, isAuthenticated } = useAuth(); // Add this line
 
   const handleMessageHost = async () => {
     setIsMessageLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
+      // Use isAuthenticated instead of checking token directly
+      if (!isAuthenticated) {
         navigate('/login', { 
           state: { 
             from: window.location.pathname,
@@ -28,7 +29,7 @@ const MessageHostButton = ({ listingId, listingTitle, hostId }) => {
         'http://localhost:5000/messages/initiate-listing',
         { listingId },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
         }
       );
 
@@ -44,7 +45,7 @@ const MessageHostButton = ({ listingId, listingTitle, hostId }) => {
             listingId
           },
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
           }
         );
       }

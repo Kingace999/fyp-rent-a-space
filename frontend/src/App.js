@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+// src/App.js
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute';
+
+// Components
 import LoginSignup from './Components/LoginSignup/LoginSignup';
 import Dashboard from './Components/Dashboard/Dashboard';
 import Profile from './Components/Profile/Profile';
@@ -8,34 +12,93 @@ import RentOutSpace from './Components/RentOutSpace/RentOutSpace';
 import MyListings from './Components/MyListings/MyListings';
 import ListingDetails from './Components/ListingDetails/ListingDetails';
 import MyBookings from './Components/MyBookings/MyBookings';
-import Notifications from './Components/Notifications/Notifications'; 
+import Notifications from './Components/Notifications/Notifications';
 import Messages from './Components/Messages/Messages';
 
 const App = () => {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    axios
-      .get('http://localhost:5000')
-      .then(response => setMessage(response.data.message))
-      .catch(error => console.error('Error fetching data:', error));
-  }, []);
-
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LoginSignup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/:userId" element={<Profile />} />
-        <Route path="/rent-out-space" element={<RentOutSpace />} />
-        <Route path="/my-listings" element={<MyListings />} />
-        <Route path="/listing/:id" element={<ListingDetails />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/messages" element={<Messages />} /> 
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public route */}
+          <Route path="/" element={<LoginSignup />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile/:userId" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/rent-out-space" 
+            element={
+              <ProtectedRoute>
+                <RentOutSpace />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/my-listings" 
+            element={
+              <ProtectedRoute>
+                <MyListings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/listing/:id" 
+            element={
+              <ProtectedRoute>
+                <ListingDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/my-bookings" 
+            element={
+              <ProtectedRoute>
+                <MyBookings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/notifications" 
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/messages" 
+            element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 

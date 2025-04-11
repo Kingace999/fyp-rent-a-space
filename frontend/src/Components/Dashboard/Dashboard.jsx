@@ -3,12 +3,10 @@ import { Search, MapPin, Calendar, Users, Heart, Eye, Clock, DollarSign, X, Star
 import './Dashboard.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Added import for auth context
 import ActivitiesDropdown from './ActivitiesDropdown';
 import Header from '../Headers/Header';
 import ReviewStars from '../Reviews/ReviewStars'; 
-
-
-
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +28,9 @@ const Dashboard = () => {
   });
   const [favorites, setFavorites] = useState([]);
   const [userData, setUserData] = useState(null);
+  
+  // Add auth context
+  const { isAuthenticated, currentUser, accessToken } = useAuth();
   const navigate = useNavigate();
   
   // Pagination state
@@ -77,32 +78,49 @@ const Dashboard = () => {
     }
   };
 
+  // Updated useEffect for authentication and data loading
   useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      navigate('/');
+    // If not authenticated, ProtectedRoute will handle redirection
+    if (!isAuthenticated) {
       return;
     }
 
     const fetchUserData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/auth/user/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUserData(response.data);
+        // Use the currentUser from auth context instead of making a separate API call
+        if (currentUser) {
+          setUserData(currentUser);
+        } else {
+          // If currentUser isn't set yet in auth context (rare case), fetch it
+          const response = await axios.get('http://localhost:5000/auth/user/profile', {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+          setUserData(response.data);
+        }
       } catch (error) {
         console.error('Error fetching user data:', error);
-        localStorage.clear();
-        navigate('/');
       }
     };
 
     fetchUserData();
     fetchListings(currentPage);
-  }, [navigate, currentPage]);
+  }, [navigate, currentPage, isAuthenticated, currentUser, accessToken]);
+
+  // FIX 1: Added dependency on filters to ensure refetching when filters change
+  useEffect(() => {
+    fetchListings(currentPage);
+  }, [filters.spaceType, filters.maxPrice, currentPage]);
+
+  // FIX 2: Add new effect to watch for date/endDate changes and trigger data reload
+  useEffect(() => {
+    if (filters.durationType === 'daily' && filters.date && filters.endDate) {
+      fetchListings(currentPage);
+    } else if (filters.durationType === 'hourly' && filters.date) {
+      fetchListings(currentPage);
+    }
+  }, [filters.date, filters.endDate, filters.durationType]);
 
   const isTimeInRange = (startTime, endTime, availableStartTime, availableEndTime) => {
     if (!startTime || !endTime || !availableStartTime || !availableEndTime) return true;
@@ -263,12 +281,54 @@ useEffect(() => {
   const handleFilterChange = (filterName, value) => {
     // Reset to page 1 when filters change
     setCurrentPage(1);
-    setFilters((prev) => ({
-      ...prev,
-      [filterName]: value,
-    }));
     
-    // Fetch listings with the new filter
+    // FIX 3: Handle date-related filter changes appropriately
+    if (filterName === 'endDate' && filters.durationType === 'daily') {
+      // When setting end date in daily mode, make sure both dates are set
+      setFilters(prev => ({
+        ...prev,
+        [filterName]: value
+      }));
+      // Only trigger a new search if both dates are filled
+      if (filters.date && value) {
+        fetchListings(1);
+      }
+    } else {
+      // Standard filter update for other filters
+      setFilters(prev => ({
+        ...prev,
+        [filterName]: value
+      }));
+    }
+  };
+
+  // FIX 4: Improved handleDurationTypeChange to properly reset and manage state
+  const handleDurationTypeChange = (durationType) => {
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+    
+    // Clear form fields based on the selected mode before setting the new type
+    if (durationType === 'daily') {
+      // When switching to daily mode, clear time fields
+      setFilters(prev => ({
+        ...prev,
+        durationType,
+        startTime: '',
+        endTime: '',
+        // Keep date if it was set, as it will be used as the start date
+      }));
+    } else {
+      // When switching to hourly mode, clear endDate
+      setFilters(prev => ({
+        ...prev,
+        durationType,
+        endDate: '',
+        // Keep date if it was set
+        // Keep time fields if they were set
+      }));
+    }
+    
+    // Force a re-fetch of the listings with the updated filter
     fetchListings(1);
   };
 
@@ -434,17 +494,14 @@ useEffect(() => {
                 <div className="duration-toggle">
                   <button
                     className={`toggle-btn ${filters.durationType !== 'daily' ? 'active' : ''}`}
-                    onClick={() => {
-                      handleFilterChange('durationType', 'hourly');
-                      handleFilterChange('endDate', '');
-                    }}
+                    onClick={() => handleDurationTypeChange('hourly')}
                   >
                     <Clock size={16} />
                     Hourly
                   </button>
                   <button
                     className={`toggle-btn ${filters.durationType === 'daily' ? 'active' : ''}`}
-                    onClick={() => handleFilterChange('durationType', 'daily')}
+                    onClick={() => handleDurationTypeChange('daily')}
                   >
                     <Calendar size={16} />
                     Daily

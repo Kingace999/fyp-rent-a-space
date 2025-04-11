@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, DollarSign, X } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext'; // Added auth context import
 import ActivitiesDropdown from '../Dashboard/ActivitiesDropdown';
 import './MyBookings.css';
 import { BookingDetails, CancelBookingDialog } from './BookingModals';
@@ -10,10 +11,13 @@ import LeaveReviewForm from '../Reviews/LeaveReviewForm';
 import PaginationControls from './PaginationControls';
 import Header from '../Headers/Header';
 import MessageButton from './MessageButton';
+import { bookingAPI } from '../../services/api'; // Import API service if you have it
 
 
 
 const MyBookings = () => {
+  // Add auth context
+  const { isAuthenticated, accessToken } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,20 +37,29 @@ const MyBookings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [bookingsPerPage] = useState(6);
 
-  // Initial bookings fetch
+  // Initial bookings fetch - Updated to use auth context
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
+    // If not authenticated, ProtectedRoute will handle redirection
+    if (!isAuthenticated) {
       return;
     }
 
     const fetchBookings = async () => {
       try {
         console.log('Starting to fetch bookings...');
-        const response = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        
+        // Use the API service if available
+        let response;
+        try {
+          // Try to use the API service first
+          response = await bookingAPI.getBookings('?include_payments=true');
+        } catch {
+          // Fall back to direct axios call with accessToken
+          response = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+        }
+        
         console.log('Bookings data received:', response.data);
         setBookings(response.data);
         setFilteredBookings(response.data);
@@ -59,15 +72,16 @@ const MyBookings = () => {
     };
 
     fetchBookings();
-  }, [navigate]);
+  }, [navigate, isAuthenticated, accessToken]);
 
-  // New effect for fetching user reviews
+  // New effect for fetching user reviews - Updated to use auth context
   useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    
     const fetchUserReviews = async () => {
-      const token = localStorage.getItem('token');
       try {
         const response = await axios.get('http://localhost:5000/reviews/user', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
         // Convert array of reviews to object for easier lookup
         const reviewsMap = {};
@@ -81,15 +95,16 @@ const MyBookings = () => {
     };
 
     fetchUserReviews();
-  }, []);
+  }, [isAuthenticated, accessToken]);
 
-  // Effect for fetching listing details
+  // Effect for fetching listing details - Updated to use auth context
   useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    
     const fetchListingDetails = async (listingId) => {
-      const token = localStorage.getItem('token');
       try {
         const response = await axios.get(`http://localhost:5000/listings/${listingId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
         setListings(prev => ({
           ...prev,
@@ -105,7 +120,7 @@ const MyBookings = () => {
         fetchListingDetails(booking.listing_id);
       }
     });
-  }, [bookings]);
+  }, [bookings, isAuthenticated, accessToken]);
 
   // Filtering and sorting effect (unchanged)
   useEffect(() => {
@@ -174,7 +189,8 @@ const MyBookings = () => {
 useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, dateFilter, statusFilter, sortCriteria]);  
-// Replace this function
+
+// Updated cancel booking function to use auth context
 const handleCancelBooking = async (bookingId) => {
   try {
       // Start cancellation
@@ -182,7 +198,7 @@ const handleCancelBooking = async (bookingId) => {
           `http://localhost:5000/payments/refund/${bookingId}`,
           {},
           {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+              headers: { Authorization: `Bearer ${accessToken}` }
           }
       );
 
@@ -195,7 +211,7 @@ const handleCancelBooking = async (bookingId) => {
               const statusResponse = await axios.get(
                   `http://localhost:5000/bookings/${bookingId}`,
                   {
-                      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                      headers: { Authorization: `Bearer ${accessToken}` }
                   }
               );
               
@@ -228,10 +244,11 @@ const handleCancelBooking = async (bookingId) => {
   }
 };
 
+  // Updated to use auth context
   const handleBookingUpdate = async (updatedBooking) => {
     try {
       const response = await axios.get('http://localhost:5000/bookings/user', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${accessToken}` }
       });
       setBookings(response.data);
     } catch (err) {
@@ -266,18 +283,18 @@ const handleCancelBooking = async (bookingId) => {
     setShowReviewForm(true);
   };
 
+  // Updated to use auth context
   const refreshData = async () => {
-    const token = localStorage.getItem('token');
     try {
       // Refresh bookings
       const bookingsResponse = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${accessToken}` }
       });
       setBookings(bookingsResponse.data);
 
       // Refresh reviews
       const reviewsResponse = await axios.get('http://localhost:5000/reviews/user', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${accessToken}` }
       });
       const reviewsMap = {};
       reviewsResponse.data.forEach(review => {
