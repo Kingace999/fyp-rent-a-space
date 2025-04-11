@@ -12,7 +12,7 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('Connected to the test database');
+
 });
 
 pool.on('error', (err) => {

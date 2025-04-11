@@ -5,12 +5,12 @@ const { setupTestDatabase, teardownTestDatabase, setupTestPayment } = require('.
 // Helper function to handle time slot selection - reused from your existing tests
 async function selectTimeSlots(page) {
   try {
-    console.log('Starting time selection process');
+
     
     // Skip if time picker is not visible
     const isTimePickerVisible = await page.locator('.time-picker-input').first().isVisible();
     if (!isTimePickerVisible) {
-      console.log('Time picker not visible, skipping time selection');
+
       return true;
     }
     
@@ -18,16 +18,16 @@ async function selectTimeSlots(page) {
     const hasSelectedDate = await page.evaluate(() => {
       return document.querySelector('.react-datepicker__day--selected') !== null;
     });
-    console.log('Has selected date:', hasSelectedDate);
+
     
     if (!hasSelectedDate) {
-      console.log('No date selected, selecting first available date');
+
       await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().click();
       await page.waitForTimeout(2000);
     }
     
     // Click first time picker
-    console.log('Clicking first time picker');
+
     await page.locator('.time-picker-input').first().click();
     await page.waitForTimeout(2000);
     
@@ -45,48 +45,48 @@ async function selectTimeSlots(page) {
       timeOptionsCount = await page.locator(selector).count();
       if (timeOptionsCount > 0) {
         selectedSelector = selector;
-        console.log(`Found ${timeOptionsCount} time options using selector: ${selector}`);
+
         break;
       }
     }
     
     if (timeOptionsCount === 0) {
-      console.log('No time options found. Attempting direct input as fallback');
+
       await page.fill('.time-picker-input:first-of-type', '10:00 AM');
       await page.waitForTimeout(1000);
       return false;
     }
     
     // Select first available time
-    console.log(`Selecting first time slot using ${selectedSelector}`);
+
     await page.locator(selectedSelector).first().click();
     await page.waitForTimeout(2000);
     
     // Check if second picker is enabled now
     const isSecondPickerEnabled = await page.locator('.time-picker-input').nth(1).isEnabled();
-    console.log('Second time picker enabled:', isSecondPickerEnabled);
+
     
     if (!isSecondPickerEnabled) {
-      console.log('Second time picker still disabled after selecting start time');
+
       return false;
     }
     
     // Click second time picker
-    console.log('Clicking second time picker');
+
     await page.locator('.time-picker-input').nth(1).click();
     await page.waitForTimeout(2000);
     
     // Select last available end time
     const endTimeOptionsCount = await page.locator(selectedSelector).count();
-    console.log(`Found ${endTimeOptionsCount} end time options`);
+
     
     if (endTimeOptionsCount === 0) {
-      console.log('No end time options available');
+
       return false;
     }
     
     // Select the last time slot (for maximum duration)
-    console.log('Selecting last time slot');
+
     const timeOptions = await page.locator(selectedSelector).all();
     await timeOptions[timeOptions.length - 1].click();
     await page.waitForTimeout(2000);
@@ -320,7 +320,7 @@ test.describe('Refund Flow Tests', () => {
     try {
       // Set up the basic test database (user and listing)
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
 
       // Get a listing ID for the test user
       const { Pool } = require('pg');
@@ -341,13 +341,13 @@ test.describe('Refund Flow Tests', () => {
       }
       
       testListing = listingResult.rows[0];
-      console.log('Using test listing with ID:', testListing.id);
+
 
       // Create a test booking with payment for refund testing
       if (testData.user && testListing) {
         const bookingWithPayment = await setupTestPayment(testData.user.id, testListing.id);
         testBooking = bookingWithPayment.booking;
-        console.log('Created test booking with ID:', testBooking.id);
+
       }
 
       await pool.end();
@@ -375,7 +375,7 @@ test.describe('Refund Flow Tests', () => {
   test.beforeEach(async ({ page }) => {
     try {
       await page.goto('/');
-      console.log('Navigated to home page');
+
       
       await page.fill('input[type="email"]', testData.credentials.email);
       await page.fill('input[type="password"]', testData.credentials.password);
@@ -383,12 +383,12 @@ test.describe('Refund Flow Tests', () => {
       await page.click('.submit-container > .submit');
       await page.waitForTimeout(3000);
       
-      console.log('URL after login:', page.url());
+
       
       // Enable console logging for payment-related errors
       page.on('console', msg => {
         if (msg.type() === 'error' && msg.text().includes('payment')) {
-          console.log('PAYMENT CONSOLE ERROR:', msg.text());
+
         }
       });
     } catch (error) {
@@ -403,7 +403,7 @@ test.describe('Refund Flow Tests', () => {
 
   test('should cancel booking and process full refund', async ({ page }) => {
     try {
-      console.log('Starting full cancellation/refund test');
+
       
       // Route interception for the refund endpoint
       await page.route('**/payments/refund/**', async (route) => {
@@ -413,11 +413,11 @@ test.describe('Refund Flow Tests', () => {
         const bookingId = bookingIdMatch ? bookingIdMatch[1] : null;
         
         if (!bookingId) {
-          console.log('Could not extract booking ID from URL:', url);
+
           return route.continue();
         }
         
-        console.log(`Intercepted refund request for booking ${bookingId}`);
+
         
         try {
           // Directly cancel the booking in the database
@@ -448,10 +448,10 @@ test.describe('Refund Flow Tests', () => {
       
       // Find the test booking card (if available)
       const bookingCards = await page.locator('.booking-card').all();
-      console.log(`Found ${bookingCards.length} booking cards`);
+
       
       if (bookingCards.length === 0) {
-        console.log('No bookings found, skipping test');
+
         return;
       }
       
@@ -472,7 +472,7 @@ test.describe('Refund Flow Tests', () => {
               bookingId = Number(idMatch[1]);
             }
           } catch (error) {
-            console.log('Could not extract booking ID from card');
+
           }
           
           // Now try to find and click the Cancel button
@@ -486,7 +486,7 @@ test.describe('Refund Flow Tests', () => {
       }
       
       if (!cancelButtonFound) {
-        console.log('No cancel button found on any active booking, trying alternate approaches');
+
         
         // Try opening view details first
         for (const card of bookingCards) {
@@ -511,12 +511,12 @@ test.describe('Refund Flow Tests', () => {
       }
       
       if (!cancelButtonFound) {
-        console.log('Could not find any booking with a cancel button, trying direct database update');
+
         
         // If we have the test booking and still couldn't find the button, try direct database update
         if (testBooking && testBooking.id) {
           await directlyCancelBooking(testBooking.id, testData.user.id);
-          console.log(`Directly cancelled booking ${testBooking.id} in database`);
+
           
           // Refresh page
           await page.goto('/my-bookings');
@@ -527,7 +527,7 @@ test.describe('Refund Flow Tests', () => {
           expect(cancelled).toBeTruthy();
           return;
         } else {
-          console.log('No test booking available for direct cancellation, skipping test');
+
           return;
         }
       }
@@ -555,12 +555,12 @@ test.describe('Refund Flow Tests', () => {
       }
       
       if (!confirmButtonFound) {
-        console.log('Could not find confirmation button in the cancel dialog, skipping test');
+
         return;
       }
       
       // Wait for the cancellation to process
-      console.log('Waiting for cancellation to process...');
+
       await page.waitForTimeout(5000);
       
       // Take screenshot after cancellation
@@ -601,7 +601,7 @@ test.describe('Refund Flow Tests', () => {
 
   test('should modify booking and process partial refund', async ({ page, context }) => {
     try {
-      console.log('Starting partial refund via modification test');
+
       
       // Create a new isolated context for this test
       const newContext = await context.browser().newContext();
@@ -614,7 +614,7 @@ test.describe('Refund Flow Tests', () => {
           const postData = route.request().postDataJSON();
           
           if (!postData || !postData.bookingId || !postData.refundAmount) {
-            console.log('Missing required data in partial refund request:', postData);
+
             return route.continue();
           }
           
@@ -623,7 +623,7 @@ test.describe('Refund Flow Tests', () => {
           const newStartDate = postData.newStartDate;
           const newEndDate = postData.newEndDate;
           
-          console.log(`Intercepted partial refund request for booking ${bookingId}`, postData);
+
           
           try {
             // Parse the new dates
@@ -631,7 +631,7 @@ test.describe('Refund Flow Tests', () => {
             const endDate = newEndDate ? new Date(newEndDate) : null;
             
             if (!endDate) {
-              console.log('Missing end date in partial refund request');
+
               return route.continue();
             }
             
@@ -675,10 +675,10 @@ test.describe('Refund Flow Tests', () => {
         
         // Find all booking cards
         const bookingCards = await newPage.locator('.booking-card').all();
-        console.log(`Found ${bookingCards.length} booking cards for modification test`);
+
         
         if (bookingCards.length === 0) {
-          console.log('No bookings found, trying direct database update');
+
           
           // If we have the test booking but can't find it in UI, try direct DB update
           if (testBooking && testBooking.id) {
@@ -694,13 +694,13 @@ test.describe('Refund Flow Tests', () => {
               newEndDate
             );
             
-            console.log(`Directly modified booking ${testBooking.id} in database`);
+
             await newContext.close();
             
             // This test passes because we made the change directly
             return;
           } else {
-            console.log('No test booking available for direct modification, skipping test');
+
             await newContext.close();
             return;
           }
@@ -746,7 +746,7 @@ test.describe('Refund Flow Tests', () => {
         }
         
         if (!updateButtonFound) {
-          console.log('Could not find any booking with an update button, trying direct update');
+
           
           // If we have the test booking but can't interact with button, try direct DB update
           if (testBooking && testBooking.id) {
@@ -762,13 +762,13 @@ test.describe('Refund Flow Tests', () => {
               newEndDate
             );
             
-            console.log(`Directly modified booking ${testBooking.id} in database`);
+
             await newContext.close();
             
             // This test passes because we made the change directly
             return;
           } else {
-            console.log('No test booking available for direct modification, skipping test');
+
             await newContext.close();
             return;
           }
@@ -782,7 +782,7 @@ test.describe('Refund Flow Tests', () => {
         const isHourly = await newPage.locator('.time-picker-input').first().isVisible();
         
         if (isHourly) {
-          console.log('Detected hourly booking, modifying time');
+
           
           // Ensure date is selected first
           if (await newPage.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -813,7 +813,7 @@ test.describe('Refund Flow Tests', () => {
           await newPage.waitForTimeout(2000);
           
         } else {
-          console.log('Detected daily booking, modifying dates');
+
           
           // Keep the start date (first date picker) the same
           // For the end date, select an earlier date
@@ -827,7 +827,7 @@ test.describe('Refund Flow Tests', () => {
             await availableDates[0].click();
             await newPage.waitForTimeout(1000);
           } else {
-            console.log('Not enough available dates to modify booking, trying direct update');
+
             
             // If we have the test booking but can't interact with calendar, try direct DB update
             if (testBooking && testBooking.id) {
@@ -843,13 +843,13 @@ test.describe('Refund Flow Tests', () => {
                 newEndDate
               );
               
-              console.log(`Directly modified booking ${testBooking.id} in database`);
+
               await newContext.close();
               
               // This test passes because we made the change directly
               return;
             } else {
-              console.log('No test booking available for direct modification, skipping test');
+
               await newContext.close();
               return;
             }
@@ -900,7 +900,7 @@ test.describe('Refund Flow Tests', () => {
             );
             
             updateSuccessful = refundResult.rows.length > 0;
-            console.log(`Found ${refundResult.rows.length} refund records for booking ${testBooking.id}`);
+
           } finally {
             await pool.end();
           }
@@ -909,7 +909,7 @@ test.describe('Refund Flow Tests', () => {
         // If UI success not detected and we couldn't check database, test still passes
         // because we either successfully intercepted the request or performed direct database update
         if (!updateSuccessful) {
-          console.log('Update success indicators not found in UI, but test continues');
+
         }
         
         // Navigate to My Bookings to verify the update
@@ -937,7 +937,7 @@ test.describe('Refund Flow Tests', () => {
   // Database verification test
   test('should verify database reflects refund correctly', async ({ page }) => {
     try {
-      console.log('Starting database verification test');
+
       
       // This test directly checks the database state, without UI interaction
       const { Pool } = require('pg');
@@ -956,11 +956,11 @@ test.describe('Refund Flow Tests', () => {
           [testBooking.id]
         );
         
-        console.log(`Test booking status: ${bookingResult.rows[0]?.status || 'unknown'}`);
+
         
         // If our test booking isn't cancelled yet, try to cancel it directly
         if (bookingResult.rows.length > 0 && bookingResult.rows[0].status !== 'cancelled') {
-          console.log('Test booking not cancelled yet, attempting direct cancellation');
+
           await directlyCancelBooking(testBooking.id, testData.user.id);
         }
       }
@@ -975,14 +975,14 @@ test.describe('Refund Flow Tests', () => {
         [testData.credentials.email]
       );
       
-      console.log(`Found ${bookingsResult.rows.length} bookings in database for user`);
+
       
       // Check if any bookings were cancelled with refunds
       const cancelledBookings = bookingsResult.rows.filter(b => 
         b.status === 'cancelled' && b.refund_amount && parseFloat(b.refund_amount) > 0
       );
       
-      console.log(`Found ${cancelledBookings.length} cancelled bookings with refunds`);
+
       
       if (cancelledBookings.length > 0) {
         // For each cancelled booking, check for a refund payment record
@@ -996,11 +996,11 @@ test.describe('Refund Flow Tests', () => {
             [booking.id]
           );
           
-          console.log(`Found ${paymentsResult.rows.length} refund payment records for booking ${booking.id}`);
+
           
           // If no refund payment records found, create one for testing
           if (paymentsResult.rows.length === 0 && booking.refund_amount > 0) {
-            console.log(`Creating test refund record for booking ${booking.id}`);
+
             
             // First get the original payment
             const originalPayment = await pool.query(
@@ -1039,7 +1039,7 @@ test.describe('Refund Flow Tests', () => {
                 [booking.id]
               );
               
-              console.log(`Now found ${updatedPayments.rows.length} refund payment records for booking ${booking.id}`);
+
               
               if (updatedPayments.rows.length > 0) {
                 // Verify refund amount matches
@@ -1047,8 +1047,8 @@ test.describe('Refund Flow Tests', () => {
                   (sum, payment) => sum + parseFloat(payment.amount), 0
                 );
                 
-                console.log(`Booking ${booking.id} refund amount: ${booking.refund_amount}`);
-                console.log(`Total refund payments: ${totalRefundAmount}`);
+
+
                 
                 // Amounts should be approximately equal (allowing for minor float differences)
                 const difference = Math.abs(totalRefundAmount - parseFloat(booking.refund_amount));
@@ -1065,8 +1065,8 @@ test.describe('Refund Flow Tests', () => {
               (sum, payment) => sum + parseFloat(payment.amount), 0
             );
             
-            console.log(`Booking ${booking.id} refund amount: ${booking.refund_amount}`);
-            console.log(`Total refund payments: ${totalRefundAmount}`);
+
+
             
             // Amounts should be approximately equal (allowing for minor float differences)
             const difference = Math.abs(totalRefundAmount - parseFloat(booking.refund_amount));
@@ -1079,7 +1079,7 @@ test.describe('Refund Flow Tests', () => {
         // Ensure at least one refund was verified
         expect(atLeastOneRefundVerified).toBeTruthy();
       } else {
-        console.log('No cancelled bookings with refunds found, checking for partial refunds...');
+
         
         // Check for bookings with partial refunds (status still active)
         const bookingsWithPayments = await pool.query(
@@ -1094,17 +1094,17 @@ test.describe('Refund Flow Tests', () => {
           [testData.credentials.email]
         );
         
-        console.log(`Found ${bookingsWithPayments.rows.length} active bookings with partial refunds`);
+
         
         if (bookingsWithPayments.rows.length > 0) {
           // We found active bookings with partial refunds
           for (const booking of bookingsWithPayments.rows) {
-            console.log(`Booking ${booking.id} has partial refund of ${booking.refund_amount}`);
+
             expect(parseFloat(booking.refund_amount)).toBeGreaterThan(0);
           }
         } else {
           // If no partial refunds found either, we'll create a test case
-          console.log('No partial refunds found, creating test data for verification');
+
           
           // Get any active booking
           const activeBookings = bookingsResult.rows.filter(b => b.status === 'active');
@@ -1142,7 +1142,7 @@ test.describe('Refund Flow Tests', () => {
                 ]
               );
               
-              console.log(`Created test partial refund of ${refundAmount} for booking ${booking.id}`);
+
               
               // Verify the refund was created
               const refundResult = await pool.query(
@@ -1155,7 +1155,7 @@ test.describe('Refund Flow Tests', () => {
               
               if (refundResult.rows.length > 0 && refundResult.rows[0].total_refund) {
                 const totalRefund = parseFloat(refundResult.rows[0].total_refund);
-                console.log(`Verified partial refund total: ${totalRefund}`);
+
                 expect(Math.abs(totalRefund - refundAmount)).toBeLessThan(0.01);
               }
             }

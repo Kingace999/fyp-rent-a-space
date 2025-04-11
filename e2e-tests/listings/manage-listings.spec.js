@@ -15,7 +15,7 @@ test.describe('Listings - Manage User Listings', () => {
   test.beforeAll(async () => {
     try {
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
     } catch (error) {
       console.error('Error in test setup:', error);
       // Provide fallback test data
@@ -41,7 +41,7 @@ test.describe('Listings - Manage User Listings', () => {
   test.beforeEach(async ({ page }) => {
     // First navigate to the home page
     await page.goto('/');
-    console.log('Navigated to home page');
+
     
     // Fill in login credentials and submit
     await page.fill('input[type="email"]', testData.credentials.email);
@@ -54,21 +54,21 @@ test.describe('Listings - Manage User Listings', () => {
     await page.waitForTimeout(3000);
     
     // Log current URL to see where we are
-    console.log('URL after login:', page.url());
+
     
     // Navigate to my listings page
     await page.goto('/my-listings');
     await page.waitForTimeout(2000);
-    console.log('Navigated to my listings page:', page.url());
+
   });
 
   test('should update an existing listing', async ({ page }) => {
     // Count initial listings to verify we have something to update
     const initialCount = await page.locator('.listing-card, [data-testid="listing"]').count();
-    console.log('Initial listing count before update:', initialCount);
+
     
     if (initialCount === 0) {
-      console.log('No listings found to update, test will be skipped');
+
       // Don't fail the test if there's nothing to update
       return;
     }
@@ -78,7 +78,7 @@ test.describe('Listings - Manage User Listings', () => {
     if (await editButton.isVisible()) {
       // Get the current title to see if it changes
       const currentTitle = await page.locator('.listing-card h3').first().textContent();
-      console.log('Current listing title before update:', currentTitle);
+
       
       await editButton.click();
       await page.waitForTimeout(2000);
@@ -93,7 +93,7 @@ test.describe('Listings - Manage User Listings', () => {
       // Enable page error logging
       page.on('console', msg => {
         if (msg.type() === 'error') {
-          console.log('PAGE ERROR:', msg.text());
+
         }
       });
       
@@ -116,18 +116,18 @@ test.describe('Listings - Manage User Listings', () => {
           await page.fill('input[name="end_date"]', endDate.toISOString().split('T')[0]);
         }
       } catch (e) {
-        console.log('Date fields may already be populated, continuing');
+
       }
       
       // Take screenshot of the form before submitting
       await page.screenshot({ path: 'before-update.png' });
       
-      console.log('About to submit with title:', updatedTitle);
+
       
       // Use the correct button class from your component
       await page.click('.save-button');
       
-      console.log('Clicked save button, waiting for update...');
+
       
       // Wait for any response from the server
       await page.waitForTimeout(5000);
@@ -137,10 +137,10 @@ test.describe('Listings - Manage User Listings', () => {
         const messageVisible = await page.locator('.message').isVisible();
         if (messageVisible) {
           const messageText = await page.locator('.message').textContent();
-          console.log('Message after save:', messageText);
+
         }
       } catch (e) {
-        console.log('No message found');
+
       }
       
       // Navigate back to my listings to verify update
@@ -149,21 +149,21 @@ test.describe('Listings - Manage User Listings', () => {
       
       // Check if there are any listings now
       const finalCount = await page.locator('.listing-card, [data-testid="listing"]').count();
-      console.log('Listing count after update:', finalCount);
+
       
       if (finalCount === 0) {
-        console.log('WARNING: No listings found after update. The update may have failed.');
+
         // Take a screenshot to see what's on the page
         await page.screenshot({ path: 'no-listings-after-update.png' });
         // Since the delete test passes, we'll consider this a configuration issue
         // rather than a test failure
-        console.log('Test continuing without failing since this may be a configuration issue');
+
         return;
       }
       
       // Log all titles for debugging
       const allTitles = await page.locator('.listing-card h3').allTextContents();
-      console.log('All titles on page:', allTitles);
+
       
       // Check if the updated title appears - use a more flexible approach
       let updatedTitleVisible = false;
@@ -173,21 +173,21 @@ test.describe('Listings - Manage User Listings', () => {
           break;
         }
       }
-      console.log('Updated title visible in listings:', updatedTitleVisible);
+
       
       expect(updatedTitleVisible).toBeTruthy();
     } else {
-      console.log('Edit button not found, skipping update test');
+
     }
   });
 
   test('should delete a listing', async ({ page }) => {
     // Count initial listings
     const initialCount = await page.locator('.listing-card, [data-testid="listing"]').count();
-    console.log('Initial listing count:', initialCount);
+
     
     if (initialCount === 0) {
-      console.log('No listings to delete, test skipped');
+
       return;
     }
     
@@ -196,12 +196,12 @@ test.describe('Listings - Manage User Listings', () => {
     if (await deleteButton.isVisible()) {
       // Use the correct selector to get the listing title
       const listingTitle = await page.locator('.listing-card h3').first().textContent();
-      console.log('Deleting listing:', listingTitle);
+
       
       // Enable page error logging
       page.on('console', msg => {
         if (msg.type() === 'error') {
-          console.log('PAGE ERROR:', msg.text());
+
         }
       });
       
@@ -212,21 +212,21 @@ test.describe('Listings - Manage User Listings', () => {
       try {
         // Wait for the delete modal to appear
         await page.waitForSelector('.delete-modal', { timeout: 5000 });
-        console.log('Delete modal visible, clicking confirm button');
+
         
         // Take a screenshot for debugging
         await page.screenshot({ path: 'delete-modal.png' });
         
         // Click the confirm delete button
         await page.click('.confirm-delete-button');
-        console.log('Clicked confirm delete button');
+
         
         // Wait for success message or for the page to update
         try {
           await page.waitForSelector('.message', { timeout: 5000 });
-          console.log('Message detected after deletion');
+
         } catch (e) {
-          console.log('No message found after deletion, continuing');
+
         }
         
         // Instead of reloading (which might cause issues), wait a bit
@@ -236,11 +236,11 @@ test.describe('Listings - Manage User Listings', () => {
         try {
           // Try to interact with the page to see if it's still open
           const url = await page.url();
-          console.log('Current URL after deletion:', url);
+
           
           // Count final listings
           const finalCount = await page.locator('.listing-card, [data-testid="listing"]').count();
-          console.log('Final listing count:', finalCount);
+
           
           // Test if the count decreased
           expect(finalCount).toBeLessThan(initialCount);
@@ -255,14 +255,14 @@ test.describe('Listings - Manage User Listings', () => {
         try {
           await page.reload();
           const finalCount = await page.locator('.listing-card, [data-testid="listing"]').count();
-          console.log('Final listing count after reload:', finalCount);
+
           expect(finalCount).toBeLessThan(initialCount);
         } catch (e2) {
           console.error('Failed to verify deletion after error:', e2);
         }
       }
     } else {
-      console.log('Delete button not found, skipping delete test');
+
     }
   });
 });

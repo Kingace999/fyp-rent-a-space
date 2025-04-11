@@ -2016,7 +2016,7 @@ const createUpdatePaymentIntent = async (req, res) =&gt; {
             }
         });
 &nbsp;
-        console.log('Created update payment intent with metadata:', paymentIntent.metadata);
+
 &nbsp;
         // Mark booking as pending update
         await pool.query(
@@ -2047,8 +2047,8 @@ const handleWebhook = async (req, res) =&gt; {
             process.env.STRIPE_WEBHOOK_SECRET
         );
  
-        console.log('Received webhook event:', event.type);
-        console.log('FULL EVENT:', JSON.stringify(event, null, 2));
+
+
  
         const client = await pool.connect();
         try {
@@ -2056,11 +2056,11 @@ const handleWebhook = async (req, res) =&gt; {
 &nbsp;
             switch (event.type) {
                 case 'payment_intent.succeeded':
-                    console.log('Processing payment_intent.succeeded webhook');
+
                     const paymentIntent = event.data.object;
                     const metadata = paymentIntent.metadata;
 &nbsp;
-                    console.log('Received payment intent metadata:', metadata);
+
 &nbsp;
                     <span class="missing-if-branch" title="if path not taken" >I</span>if (!metadata) {
 <span class="cstat-no" title="statement not covered" >                        throw new Error('Missing metadata in payment intent');</span>
@@ -2073,7 +2073,7 @@ const handleWebhook = async (req, res) =&gt; {
 &nbsp;
                     // Get charge details for the payment intent
                     const chargeDetails = await getChargeDetails(paymentIntent.id);
-                    console.log('Charge details:', chargeDetails);
+
 &nbsp;
                     <span class="missing-if-branch" title="if path not taken" >I</span>if (metadata.payment_purpose === 'update_additional') {
 <span class="cstat-no" title="statement not covered" >                        console.log('Processing update additional payment');</span>
@@ -2196,7 +2196,7 @@ const handleWebhook = async (req, res) =&gt; {
                         }
                     } else {
                         // Handle initial booking payment
-                        console.log('Processing initial booking payment');
+
                         let bookingStart, bookingEnd;
                         
                         <span class="missing-if-branch" title="if path not taken" >I</span>if (metadata.priceType === 'hour') {
@@ -2243,7 +2243,7 @@ const handleWebhook = async (req, res) =&gt; {
                             ]
                         );
 &nbsp;
-                        console.log('Successfully processed initial booking payment');
+
 &nbsp;
                         await createNotification(
                             'payment_success',
@@ -2308,7 +2308,7 @@ const handleWebhook = async (req, res) =&gt; {
 <span class="cstat-no" title="statement not covered" >                                break;</span>
                             }
                     
-                            console.log('Processing refund with metadata:', refundMetadata);
+
                     
                             <span class="missing-if-branch" title="else path not taken" >E</span>if (refund.status === 'succeeded' &amp;&amp; refundMetadata.refundType === 'cancellation') {
                                 // First get the original payment
@@ -2357,7 +2357,7 @@ const handleWebhook = async (req, res) =&gt; {
                                     'Refund Processed'
                                 );
                                 
-                                console.log('Successfully processed cancellation refund');
+
                             }
                         }
                         break;
@@ -2367,7 +2367,7 @@ const handleWebhook = async (req, res) =&gt; {
             }
 &nbsp;
             await client.query('COMMIT');
-            console.log(`Webhook processed successfully: ${event.type}`);
+
         } catch (err) {
 <span class="cstat-no" title="statement not covered" >            await client.query('ROLLBACK');</span>
 <span class="cstat-no" title="statement not covered" >            console.error('Transaction failed:', err);</span>
@@ -2385,13 +2385,13 @@ const handleWebhook = async (req, res) =&gt; {
 const processBookingRefund = async (req, res) =&gt; {
     const client = await pool.connect();
     try {
-        console.log('Starting refund process for booking:', req.params.bookingId);
+
         await client.query('BEGIN');
         
         const { bookingId } = req.params;
         const userId = req.user.userId;
 &nbsp;
-        console.log('User ID:', userId, 'Booking ID:', bookingId);
+
 &nbsp;
         // First check if we can get the booking
         const bookingCheck = await client.query(
@@ -2399,7 +2399,7 @@ const processBookingRefund = async (req, res) =&gt; {
             [bookingId, userId]
         );
 &nbsp;
-        console.log('Initial booking check:', bookingCheck.rows);
+
 &nbsp;
         <span class="missing-if-branch" title="if path not taken" >I</span>if (bookingCheck.rows.length === 0) {
 <span class="cstat-no" title="statement not covered" >            throw new Error('Booking not found');</span>
@@ -2447,7 +2447,7 @@ const processBookingRefund = async (req, res) =&gt; {
             [bookingId, userId]
         );
 &nbsp;
-        console.log('Payment results:', paymentsResult.rows);
+
 &nbsp;
         <span class="missing-if-branch" title="if path not taken" >I</span>if (paymentsResult.rows.length === 0) {
 <span class="cstat-no" title="statement not covered" >            throw new Error('No refundable payments found');</span>
@@ -2470,7 +2470,7 @@ const processBookingRefund = async (req, res) =&gt; {
             try {
                 // Get charge details from Stripe
                 const chargeDetails = await getChargeDetails(payment.stripe_payment_id);
-                console.log('Stripe charge details:', chargeDetails);
+
         
                 // Use database amount if Stripe details are not available
                 const refundableAmount = chargeDetails ? chargeDetails.amountRefundable : <span class="branch-1 cbranch-no" title="branch not covered" >parseFloat(payment.refundable_amount);</span>
@@ -2501,7 +2501,7 @@ const processBookingRefund = async (req, res) =&gt; {
                     }
                 });
         
-                console.log('Refund created:', refund.id);
+
         
                 // Record the refund in database with both original_payment_id and stripe_charge_id
                 const refundRecord = await client.query(
@@ -2651,7 +2651,7 @@ const processPartialRefund = async (req, res) =&gt; {
 &nbsp;
         // Get charge details from Stripe
         const chargeDetails = await getChargeDetails(latestPayment.stripe_payment_id);
-        console.log('Stripe charge details:', chargeDetails);
+
 &nbsp;
         // Use database amount if Stripe details are not available
         const availableAmount = chargeDetails ? chargeDetails.amountRefundable : <span class="branch-1 cbranch-no" title="branch not covered" >parseFloat(latestPayment.amount);</span>

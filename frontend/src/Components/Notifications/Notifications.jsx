@@ -85,7 +85,7 @@ const Notifications = () => {
   };
 
   const handleNotificationClick = async (notification) => {
-    console.log('Notification clicked:', notification);
+
     
     if (!notification.is_read) {
       await markAsRead(new Event('click'), notification.id);
@@ -93,10 +93,10 @@ const Notifications = () => {
   
     // Updated to check for message_new instead of message
     if (notification.type === 'message_new') {
-      console.log('Message notification detected');
+
       try {
         navigate('/messages'); // Simplified navigation
-        console.log('Navigation completed');
+
       } catch (error) {
         console.error('Navigation error:', error);
       }

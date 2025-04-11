@@ -26,14 +26,14 @@ async function verifyDatabaseConnection() {
   try {
     const dbResult = await client.query('SELECT current_database()');
     const currentDatabase = dbResult.rows[0].current_database;
-    console.log(' CURRENT DATABASE:', currentDatabase);
+
     
     try {
       // Additional verification checks
       const userCountResult = await client.query('SELECT COUNT(*) FROM users');
-      console.log(' Initial User Count:', userCountResult.rows[0].count);
+
     } catch (err) {
-      console.log('Could not count users - table may not exist yet');
+
     }
     
     return currentDatabase;
@@ -56,14 +56,9 @@ async function setupTestDatabase() {
       throw new Error(`CRITICAL: Not using a test database! Current DB: ${currentDatabase}`);
     }
     
-    console.log(' Database Credentials:', {
-      user: process.env.DB_USER,
-      host: process.env.DB_HOST,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT
-    });
     
-    console.log('Connected to the test database');
+    
+
     
     const client = await pool.connect();
     try {
@@ -80,7 +75,7 @@ async function setupTestDatabase() {
       `);
       
       if (!tablesExist.rows[0].exists) {
-        console.log('Tables do not exist. Please run init-test-db.js first!');
+
         throw new Error('Test database tables not found');
       }
       
@@ -111,37 +106,37 @@ async function setupTestDatabase() {
         // Truncate tables that exist, in the right order
         if (reviewsExist) {
           await client.query('TRUNCATE reviews CASCADE');
-          console.log('Truncated reviews table');
+
         }
         
         if (paymentsExist) {
           await client.query('TRUNCATE payments CASCADE');
-          console.log('Truncated payments table');
+
         }
         
         if (bookingsExist && messagesExist) {
           await client.query('TRUNCATE bookings, messages CASCADE');
-          console.log('Truncated bookings and messages tables');
+
         } else {
           if (bookingsExist) {
             await client.query('TRUNCATE bookings CASCADE');
-            console.log('Truncated bookings table');
+
           }
           if (messagesExist) {
             await client.query('TRUNCATE messages CASCADE');
-            console.log('Truncated messages table');
+
           }
         }
         
         if (listingsExist) {
           await client.query('TRUNCATE listings CASCADE');
-          console.log('Truncated listings table');
+
         }
         
         await client.query('DELETE FROM users');
-        console.log('Deleted users');
+
       } catch (err) {
-        console.log('Error clearing tables:', err.message);
+
         // Don't throw error here, just continue
       }
       
@@ -152,7 +147,7 @@ async function setupTestDatabase() {
         ['Test User', 'test@example.com', hashedPassword, new Date()]
       );
       const user = userResult.rows[0];
-      console.log(' Test user created:', user.email);
+
       
       // Check the actual column names in the listings table
       try {
@@ -161,7 +156,7 @@ async function setupTestDatabase() {
           FROM information_schema.columns 
           WHERE table_name = 'listings'
         `);
-        console.log('Available columns in listings table:', columns.rows.map(r => r.column_name));
+
         
         // Create a test listing using the correct schema
         const today = new Date();
@@ -196,7 +191,7 @@ async function setupTestDatabase() {
           ]
         );
         const listing = listingResult.rows[0];
-        console.log('Test listing created:', listing.title);
+
       } catch (err) {
         console.error('Error creating test listing:', err.message);
         // Continue without failing the whole setup
@@ -318,7 +313,7 @@ async function setupTestPayment(userId, listingId) {
 async function teardownTestDatabase() {
   try {
     await pool.end();
-    console.log(' Database pool closed successfully');
+
   } catch (error) {
     console.error('Error ending pool:', error);
   }

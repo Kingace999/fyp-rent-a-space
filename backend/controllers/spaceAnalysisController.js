@@ -18,8 +18,8 @@ const analyzeSpace = async (req, res) => {
         const imagePath = path.join(__dirname, '..', req.file.path);
         
         // Debug information
-        console.log('Image path:', imagePath);
-        console.log('File exists:', fs.existsSync(imagePath));
+
+
         
         // Make separate API calls for each feature
         const [labelResponse] = await client.labelDetection(imagePath);
@@ -34,8 +34,8 @@ const analyzeSpace = async (req, res) => {
         const textDetections = textResponse.textAnnotations || [];
 
         // Log detected labels and objects for debugging
-        console.log('Detected labels:', labels.map(l => l.description));
-        console.log('Detected objects:', objects.map(o => o.name));
+
+
         
         // Analyze lighting using dominant colors and brightness
         const dominantColors = imageProperties.dominantColors?.colors || [];

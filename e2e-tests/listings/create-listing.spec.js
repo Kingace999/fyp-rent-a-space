@@ -13,7 +13,7 @@ test.describe('Listings - Create New Space Listing', () => {
   test.beforeAll(async () => {
     try {
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
     } catch (error) {
       console.error('Error in test setup:', error);
       // Provide fallback test data
@@ -39,7 +39,7 @@ test.describe('Listings - Create New Space Listing', () => {
   test.beforeEach(async ({ page }) => {
     // First navigate to the home page
     await page.goto('/');
-    console.log('Navigated to home page');
+
     
     // Fill in login credentials and submit
     await page.fill('input[type="email"]', testData.credentials.email);
@@ -52,14 +52,14 @@ test.describe('Listings - Create New Space Listing', () => {
     await page.waitForTimeout(3000);
     
     // Log current URL to see where we are
-    console.log('URL after login:', page.url());
+
     
     // After login, explicitly navigate to the rent-out-space page
     await page.goto('/rent-out-space');
     
     // Wait for navigation and log the URL to confirm
     await page.waitForTimeout(2000);
-    console.log('URL after navigation to rent-out-space:', page.url());
+
   });
 
   test('should diagnose the rent-out-space form', async ({ page }) => {
@@ -67,20 +67,20 @@ test.describe('Listings - Create New Space Listing', () => {
     await page.waitForTimeout(2000);
     
     // Log the current URL to verify we're on the right page
-    console.log('Current URL for form diagnosis:', page.url());
+
     
     // Check if there's a heading that contains "Rent Out"
     const headingText = await page.evaluate(() => {
       const headings = Array.from(document.querySelectorAll('h1, h2, h3'));
       return headings.map(h => h.textContent);
     });
-    console.log('Found headings:', headingText);
+
     
     // Look for form elements using different selectors
     const submitButtonExists = await page.locator('.submit-button').isVisible();
-    console.log('Submit button found:', submitButtonExists);
+
     
-    console.log('Form diagnosis completed');
+
   });
 
   test('should create a basic listing', async ({ page }) => {
@@ -128,16 +128,16 @@ test.describe('Listings - Create New Space Listing', () => {
     // Wait for verification modal and handle it if it appears
     try {
       await page.waitForSelector('.verification-modal, dialog, [role="dialog"]', { timeout: 5000 });
-      console.log('Verification modal detected');
+
       
       // Look for a button to confirm verification
       const verifyButton = await page.getByText(/Verify|Submit|Confirm|Yes/i);
       if (verifyButton) {
         await verifyButton.click();
-        console.log('Clicked verification button');
+
       }
     } catch (e) {
-      console.log('No verification modal detected or could not interact with it:', e.message);
+
     }
     
     // Wait for redirect or success message
@@ -145,7 +145,7 @@ test.describe('Listings - Create New Space Listing', () => {
     
     // Check the current URL - should be redirected to dashboard if successful
     const currentUrl = page.url();
-    console.log('URL after listing submission:', currentUrl);
+
     
     // Take a screenshot after submission
     await page.screenshot({ path: 'after-listing-submission.png' });
@@ -154,12 +154,12 @@ test.describe('Listings - Create New Space Listing', () => {
     const successMessage = await page.locator('.message, [role="alert"]').isVisible();
     if (successMessage) {
       const messageText = await page.locator('.message, [role="alert"]').textContent();
-      console.log('Message displayed:', messageText);
+
     }
     
     // Consider the test passed if we detect a success message or redirect to dashboard
     const listingCreated = successMessage || currentUrl.includes('/dashboard');
-    console.log('Listing creation appears successful:', listingCreated);
+
   });
 
   test('should validate required fields', async ({ page }) => {
@@ -174,21 +174,21 @@ test.describe('Listings - Create New Space Listing', () => {
     
     // In your form, validation errors show up with the class "text-red-500"
     const errorElements = await page.locator('.text-red-500').count();
-    console.log('Number of validation errors found:', errorElements);
+
     
     // You should also have an error message at the top
     const errorMessage = await page.locator('.message.error').isVisible();
-    console.log('Error message banner visible:', errorMessage);
+
     
     // The message should say something about fixing fields
     if (errorMessage) {
       const messageText = await page.locator('.message.error').textContent();
-      console.log('Error message text:', messageText);
+
     }
     
     // The test passes if either we found validation errors OR an error message
     expect(errorElements > 0 || errorMessage).toBeTruthy();
     
-    console.log('Form validation test completed');
+
   });
 });

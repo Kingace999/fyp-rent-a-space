@@ -12,7 +12,7 @@ test.describe('Listings - View and Browse Listings', () => {
   test.beforeAll(async () => {
     try {
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
     } catch (error) {
       console.error('Error in test setup:', error);
       // Provide fallback test data
@@ -38,7 +38,7 @@ test.describe('Listings - View and Browse Listings', () => {
   test.beforeEach(async ({ page }) => {
     // First navigate to the home page
     await page.goto('/');
-    console.log('Navigated to home page');
+
     
     // Fill in login credentials and submit
     await page.fill('input[type="email"]', testData.credentials.email);
@@ -51,7 +51,7 @@ test.describe('Listings - View and Browse Listings', () => {
     await page.waitForTimeout(3000);
     
     // Log current URL to see where we are
-    console.log('URL after login:', page.url());
+
   });
 
   test('should display listings on dashboard', async ({ page }) => {
@@ -60,11 +60,11 @@ test.describe('Listings - View and Browse Listings', () => {
     
     // Check if listings are displayed
     const listingsVisible = await page.locator('.listing-card, .listing-grid div, [data-testid="listing"]').isVisible();
-    console.log('Listings visible on dashboard:', listingsVisible);
+
     
     // Count the number of listings
     const listingCount = await page.locator('.listing-card, .listing-grid div, [data-testid="listing"]').count();
-    console.log('Number of listings displayed:', listingCount);
+
     
     // Expect at least one listing to be visible
     expect(listingCount).toBeGreaterThan(0);
@@ -73,7 +73,7 @@ test.describe('Listings - View and Browse Listings', () => {
   test('should filter listings by type', async ({ page }) => {
     // Check for filter controls
     const filterVisible = await page.locator('select, [data-testid="filter"], .filter').first().isVisible();
-    console.log('Filter controls visible:', filterVisible);
+
     
     if (filterVisible) {
       // Select a specific type from the filter
@@ -95,12 +95,12 @@ test.describe('Listings - View and Browse Listings', () => {
         });
       });
       
-      console.log('Filtered listing types:', listingTypes);
+
       
       // Check if at least one listing matches the filter
       expect(listingTypes.some(type => type.includes('Office Space'))).toBeTruthy();
     } else {
-      console.log('Filter controls not found, skipping filter test');
+
     }
   });
 
@@ -114,14 +114,14 @@ test.describe('Listings - View and Browse Listings', () => {
     
     // Check if we're on the listing details page
     const detailsVisible = await page.locator('h1, .listing-title, [data-testid="listing-title"]').isVisible();
-    console.log('Listing details page loaded:', detailsVisible);
+
     
     // URL should contain listing ID
     expect(page.url()).toContain('/listing/');
     
     // Look for details like price, description, etc.
     const hasDetails = await page.locator('.listing-price, .listing-description, [data-testid="listing-details"]').isVisible();
-    console.log('Listing details visible:', hasDetails);
+
     
     expect(hasDetails).toBeTruthy();
   });
@@ -131,15 +131,15 @@ test.describe('Listings - View and Browse Listings', () => {
     await page.goto('/my-listings');
     await page.waitForTimeout(2000);
     
-    console.log('Navigated to my listings page:', page.url());
+
     
     // Check if user listings are displayed
     const userListingsVisible = await page.locator('.listing-card, .listing-grid div, [data-testid="listing"]').isVisible();
-    console.log('User listings visible:', userListingsVisible);
+
     
     // Check for controls to manage listings
     const manageControls = await page.locator('button:has-text("Edit"), button:has-text("Delete"), .edit-button, .delete-button').count();
-    console.log('Management controls found:', manageControls);
+
     
     // Expect to find either listings or a message about no listings
     const contentVisible = userListingsVisible || 

@@ -59,7 +59,7 @@ pool.query('SELECT NOW()', (err, res) => {
     if (err) {
         console.error('Error connecting to the database:', err);
     } else {
-        console.log('Database connected:', res.rows);
+
     }
 });
 
@@ -77,8 +77,8 @@ app.use('/space-analysis', spaceAnalysisRoutes);
 // Only start the server if this file is run directly (not required by tests)
 if (require.main === module) {
     const server = app.listen(PORT, () => {
-        console.log(`Server is running on http://localhost:${PORT}`);
-        console.log(`Upload directory is set to: ${uploadDir}`);
+
+
     });
     
     app.close = () => {

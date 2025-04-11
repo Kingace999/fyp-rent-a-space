@@ -228,7 +228,7 @@ const ListingDetails = () => {
               <BookingForm 
                 listing={listing}
                 onSubmit={(bookingDetails) => {
-                  console.log('Booking submitted:', bookingDetails);
+
                   // Handle booking submission here
                 }}
               />

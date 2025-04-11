@@ -238,7 +238,7 @@ const Dashboard = () => {
                 listingCopy.reviewCount = Number(response.data.totalReviews) || 0;
                 hasChanges = true;
                 
-                console.log(`Listing ${listingCopy.id} - average rating:`, response.data.averageRating, 'converted to:', listingCopy.averageRating);
+
               }
             } catch (error) {
               console.error(`Error fetching reviews for listing ${listingCopy.id}:`, error);

@@ -121,7 +121,7 @@ const resetTestDB = async () => {
         );
       `);
       
-      console.log('Test database tables created successfully');
+
     } catch (error) {
       console.error('Error resetting test database:', error);
     }

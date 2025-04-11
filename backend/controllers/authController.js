@@ -169,13 +169,11 @@ const login = async (req, res) => {
 // Refresh access token
 const refresh = async (req, res) => {
     try {
-      // Debug logs
-      console.log('Cookies:', req.cookies);
-      console.log('Request body:', req.body);
+
       
       // Try to get refresh token from cookie, then from request body
       const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-      console.log('Extracted token:', refreshToken);
+
       
       if (!refreshToken) {
         return res.status(401).json({ 
@@ -207,17 +205,15 @@ const refresh = async (req, res) => {
     }
   };
 
-// Logout user
-// Logout user
+
 const logout = async (req, res) => {
     try {
       // Try to get refresh token from cookie, then from request body
       const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
       
-      // Log for debugging
-      console.log('Logout - cookies:', req.cookies);
-      console.log('Logout - body:', req.body);
-      console.log('Logout - token found:', refreshToken);
+
+
+
       
       if (refreshToken) {
         // Revoke the refresh token

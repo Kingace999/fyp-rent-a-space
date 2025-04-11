@@ -121,15 +121,7 @@ const createUpdatePaymentIntent = async (req, res) => {
             priceType
         } = req.body;
 
-        console.log('Update payment request:', { 
-            bookingId, 
-            additionalAmount, 
-            startDate, 
-            endDate, 
-            startTime, 
-            endTime, 
-            priceType 
-        });
+        
 
         if (!bookingId || !additionalAmount || additionalAmount <= 0) {
             return res.status(400).json({ message: 'Invalid request parameters' });
@@ -154,7 +146,7 @@ const createUpdatePaymentIntent = async (req, res) => {
             }
         });
 
-        console.log('Created update payment intent with metadata:', paymentIntent.metadata);
+
 
         // Mark booking as pending update
         await pool.query(
@@ -185,8 +177,8 @@ const handleWebhook = async (req, res) => {
             process.env.STRIPE_WEBHOOK_SECRET
         );
  
-        console.log('Received webhook event:', event.type);
-        console.log('FULL EVENT:', JSON.stringify(event, null, 2));
+
+
  
         const client = await pool.connect();
         try {
@@ -194,11 +186,11 @@ const handleWebhook = async (req, res) => {
 
             switch (event.type) {
                 case 'payment_intent.succeeded':
-                    console.log('Processing payment_intent.succeeded webhook');
+
                     const paymentIntent = event.data.object;
                     const metadata = paymentIntent.metadata;
 
-                    console.log('Received payment intent metadata:', metadata);
+
 
                     if (!metadata) {
                         throw new Error('Missing metadata in payment intent');
@@ -211,10 +203,10 @@ const handleWebhook = async (req, res) => {
 
                     // Get charge details for the payment intent
                     const chargeDetails = await getChargeDetails(paymentIntent.id);
-                    console.log('Charge details:', chargeDetails);
+
 
                     if (metadata.payment_purpose === 'update_additional') {
-                        console.log('Processing update additional payment');
+
                         if (!metadata.booking_id || !metadata.amount) {
                             console.error('MISSING REQUIRED METADATA:', {
                                 booking_id: metadata.booking_id,
@@ -227,22 +219,13 @@ const handleWebhook = async (req, res) => {
                         let updateQuery, queryParams;
 
                         try {
-                            console.log('Processing dates with metadata:', {
-                                startDate: metadata.startDate,
-                                endDate: metadata.endDate,
-                                startTime: metadata.startTime,
-                                endTime: metadata.endTime,
-                                priceType: metadata.priceType
-                            });
+                            
 
                             if (metadata.priceType === 'hour' && metadata.startTime && metadata.endTime) {
                                 bookingStart = new Date(`${metadata.startDate}T${metadata.startTime}`);
                                 bookingEnd = new Date(`${metadata.startDate}T${metadata.endTime}`);
                                 
-                                console.log('Hourly booking times:', {
-                                    start: bookingStart.toISOString(),
-                                    end: bookingEnd.toISOString()
-                                });
+                                
                             } else {
                                 bookingStart = new Date(`${metadata.startDate}T00:00:00`);
                                 bookingEnd = new Date(`${metadata.endDate || metadata.startDate}T23:59:59`);
@@ -269,7 +252,7 @@ const handleWebhook = async (req, res) => {
                             queryParams = [bookingStart, bookingEnd, parseFloat(metadata.amount), metadata.booking_id];
 
                             const updateResult = await client.query(updateQuery, queryParams);
-                            console.log('Booking update result:', updateResult.rows[0]);
+
 
                             // Record additional payment with charge_id
                             await client.query(
@@ -326,7 +309,7 @@ const handleWebhook = async (req, res) => {
                                 console.error('Error creating host notification:', notificationError);
                             }
 
-                            console.log('Successfully processed update payment');
+
 
                         } catch (error) {
                             console.error('Error processing booking update:', error);
@@ -334,7 +317,7 @@ const handleWebhook = async (req, res) => {
                         }
                     } else {
                         // Handle initial booking payment
-                        console.log('Processing initial booking payment');
+
                         let bookingStart, bookingEnd;
                         
                         if (metadata.priceType === 'hour') {
@@ -381,7 +364,7 @@ const handleWebhook = async (req, res) => {
                             ]
                         );
 
-                        console.log('Successfully processed initial booking payment');
+
 
                         await createNotification(
                             'payment_success',
@@ -418,10 +401,7 @@ const handleWebhook = async (req, res) => {
 
                     case 'charge.refunded':
                         const charge = event.data.object;
-                        console.log('Processing charge.refunded webhook:', {
-                            chargeId: charge.id,
-                            paymentIntentId: charge.payment_intent
-                        });
+                        
                     
                         // Get the refund information
                         const refunds = await stripe.refunds.list({
@@ -442,11 +422,11 @@ const handleWebhook = async (req, res) => {
                             );
                     
                             if (existingRefund.rows.length > 0) {
-                                console.log('Refund already processed:', refund.id);
+
                                 break;
                             }
                     
-                            console.log('Processing refund with metadata:', refundMetadata);
+
                     
                             if (refund.status === 'succeeded' && refundMetadata.refundType === 'cancellation') {
                                 // First get the original payment
@@ -495,17 +475,17 @@ const handleWebhook = async (req, res) => {
                                     'Refund Processed'
                                 );
                                 
-                                console.log('Successfully processed cancellation refund');
+
                             }
                         }
                         break;
 
                 default:
-                    console.log(`Unhandled event type: ${event.type}`);
+
             }
 
             await client.query('COMMIT');
-            console.log(`Webhook processed successfully: ${event.type}`);
+
         } catch (err) {
             await client.query('ROLLBACK');
             console.error('Transaction failed:', err);
@@ -523,13 +503,13 @@ const handleWebhook = async (req, res) => {
 const processBookingRefund = async (req, res) => {
     const client = await pool.connect();
     try {
-        console.log('Starting refund process for booking:', req.params.bookingId);
+
         await client.query('BEGIN');
         
         const { bookingId } = req.params;
         const userId = req.user.userId;
 
-        console.log('User ID:', userId, 'Booking ID:', bookingId);
+
 
         // First check if we can get the booking
         const bookingCheck = await client.query(
@@ -537,7 +517,7 @@ const processBookingRefund = async (req, res) => {
             [bookingId, userId]
         );
 
-        console.log('Initial booking check:', bookingCheck.rows);
+
 
         if (bookingCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Booking not found' });
@@ -585,7 +565,7 @@ const processBookingRefund = async (req, res) => {
             [bookingId, userId]
         );
 
-        console.log('Payment results:', paymentsResult.rows);
+
 
         if (paymentsResult.rows.length === 0) {
             throw new Error('No refundable payments found');
@@ -608,21 +588,15 @@ const processBookingRefund = async (req, res) => {
             try {
                 // Get charge details from Stripe
                 const chargeDetails = await getChargeDetails(payment.stripe_payment_id);
-                console.log('Stripe charge details:', chargeDetails);
+
         
                 // Use database amount if Stripe details are not available
                 const refundableAmount = chargeDetails ? chargeDetails.amountRefundable : parseFloat(payment.refundable_amount);
         
-                console.log('Amount comparison:', {
-                    dbAmount: payment.refundable_amount,
-                    stripeAvailable: chargeDetails ? chargeDetails.amountRefundable : 'Not available',
-                    finalRefundAmount: refundableAmount,
-                    paymentType: payment.payment_type,
-                    paymentId: payment.payment_id
-                });
+               
         
                 if (refundableAmount <= 0) {
-                    console.log(`Skipping payment ${payment.payment_id} - no refundable amount`);
+
                     continue;
                 }
         
@@ -639,7 +613,7 @@ const processBookingRefund = async (req, res) => {
                     }
                 });
         
-                console.log('Refund created:', refund.id);
+
         
                 // Record the refund in database with both original_payment_id and stripe_charge_id
                 const refundRecord = await client.query(
@@ -664,12 +638,7 @@ const processBookingRefund = async (req, res) => {
                 refundIds.push(refund.id);
                 totalRefundAmount += refundableAmount;
         
-                console.log(`Refund recorded for payment ${payment.payment_id}:`, {
-                    refundId: refund.id,
-                    amount: refundableAmount,
-                    originalPaymentId: payment.payment_id,
-                    chargeId: chargeDetails ? chargeDetails.chargeId : refund.charge
-                });
+                
         
             } catch (refundError) {
                 console.error(`Error processing refund for payment ${payment.payment_id}:`, refundError);
@@ -729,12 +698,7 @@ const processBookingRefund = async (req, res) => {
 
         await client.query('COMMIT');
         
-        console.log('Refund process completed successfully:', {
-            bookingId,
-            totalRefundAmount,
-            refundIds
-        });
-
+        
         res.json({
             message: 'Refund processed successfully',
             totalRefundAmount,
@@ -789,17 +753,12 @@ const processPartialRefund = async (req, res) => {
 
         // Get charge details from Stripe
         const chargeDetails = await getChargeDetails(latestPayment.stripe_payment_id);
-        console.log('Stripe charge details:', chargeDetails);
+
 
         // Use database amount if Stripe details are not available
         const availableAmount = chargeDetails ? chargeDetails.amountRefundable : parseFloat(latestPayment.amount);
 
-        console.log('Amount comparison:', {
-            dbAmount: latestPayment.amount,
-            stripeAvailable: chargeDetails ? chargeDetails.amountRefundable : 'Not available',
-            finalAvailableAmount: availableAmount,
-            requestedRefundAmount: refundAmount
-        });
+        
 
         // Verify refund amount against available amount
         if (refundAmount > availableAmount) {
@@ -875,11 +834,7 @@ const processPartialRefund = async (req, res) => {
 
         await client.query('COMMIT');
         
-        console.log('Partial refund processed successfully:', {
-            refundId: refund.id,
-            amount: refundAmount,
-            chargeId: chargeDetails ? chargeDetails.chargeId : refund.charge
-        });
+        
 
         res.json({ 
             message: 'Partial refund processed successfully',

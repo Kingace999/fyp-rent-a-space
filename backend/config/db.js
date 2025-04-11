@@ -24,7 +24,7 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log(`Connected to database: ${databaseName}`);
+
 });
 
 pool.on('error', (err) => {

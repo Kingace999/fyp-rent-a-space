@@ -89,7 +89,7 @@ export default function PaymentForm({
             priceType: listing.price_type
           };
 
-      console.log('Sending payment data:', paymentData);
+
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -102,11 +102,7 @@ export default function PaymentForm({
 
       const responseText = await response.text();
       
-      console.log('Payment intent response:', {
-        status: response.status,
-        text: responseText,
-        data: paymentData
-      });
+      
 
       let data;
       try {
@@ -125,7 +121,7 @@ export default function PaymentForm({
         throw new Error('Missing client secret in response');
       }
 
-      console.log('Confirming card payment...');
+
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: card,
@@ -168,7 +164,7 @@ export default function PaymentForm({
       }
 
       if (result.paymentIntent.status === 'succeeded') {
-        console.log('Payment succeeded:', result.paymentIntent);
+
         card.clear();
         setIsFormComplete(false);
         

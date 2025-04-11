@@ -11,7 +11,7 @@ test('inspect login page elements', async ({ page }) => {
   
   // Analyze the input elements in detail
   const inputs = await page.$$('input');
-  console.log(`Found ${inputs.length} input elements`);
+
   
   for (let i = 0; i < inputs.length; i++) {
     // For each input, get detailed information
@@ -28,12 +28,12 @@ test('inspect login page elements', async ({ page }) => {
       } : null
     }));
     
-    console.log(`Input #${i+1}:`, details);
+
   }
   
   // Find all clickable elements (buttons, divs that look like buttons)
   const clickables = await page.$$('button, .submit, [role="button"], a');
-  console.log(`Found ${clickables.length} clickable elements`);
+
   
   for (let i = 0; i < clickables.length; i++) {
     const details = await clickables[i].evaluate(el => ({
@@ -47,7 +47,7 @@ test('inspect login page elements', async ({ page }) => {
       } : null
     }));
     
-    console.log(`Clickable #${i+1}:`, details);
+
   }
   
   // Wait so we can see the page in headed mode

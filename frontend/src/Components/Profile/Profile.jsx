@@ -151,7 +151,7 @@ const Profile = () => {
           }
         }
       );
-      console.log("Profile updated successfully:", response.data);
+
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);

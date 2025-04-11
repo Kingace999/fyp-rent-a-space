@@ -5,12 +5,12 @@ const { setupTestDatabase, teardownTestDatabase } = require('../helpers/dbSetup'
 // Helper function to handle time slot selection
 async function selectTimeSlots(page) {
   try {
-    console.log('Starting time selection process');
+
     
     // Skip if time picker is not visible
     const isTimePickerVisible = await page.locator('.time-picker-input').first().isVisible();
     if (!isTimePickerVisible) {
-      console.log('Time picker not visible, skipping time selection');
+
       return true;
     }
     
@@ -18,16 +18,16 @@ async function selectTimeSlots(page) {
     const hasSelectedDate = await page.evaluate(() => {
       return document.querySelector('.react-datepicker__day--selected') !== null;
     });
-    console.log('Has selected date:', hasSelectedDate);
+
     
     if (!hasSelectedDate) {
-      console.log('No date selected, selecting first available date');
+
       await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().click();
       await page.waitForTimeout(2000);
     }
     
     // Click first time picker
-    console.log('Clicking first time picker');
+
     await page.locator('.time-picker-input').first().click();
     await page.waitForTimeout(2000);
     
@@ -48,13 +48,13 @@ async function selectTimeSlots(page) {
       timeOptionsCount = await page.locator(selector).count();
       if (timeOptionsCount > 0) {
         selectedSelector = selector;
-        console.log(`Found ${timeOptionsCount} time options using selector: ${selector}`);
+
         break;
       }
     }
     
     if (timeOptionsCount === 0) {
-      console.log('No time options found with any selector. Checking HTML structure...');
+
       
       // Get the HTML structure to debug
       const timePickerHtml = await page.evaluate(() => {
@@ -62,10 +62,10 @@ async function selectTimeSlots(page) {
         return container ? container.outerHTML : 'Time container not found';
       });
       
-      console.log('Time picker HTML structure:', timePickerHtml.substring(0, 200) + '...');
+
       
       // Try direct input as a fallback
-      console.log('Attempting direct input instead of dropdown selection');
+
       await page.fill('.time-picker-input:first-of-type', '10:00 AM');
       await page.waitForTimeout(1000);
       
@@ -73,35 +73,35 @@ async function selectTimeSlots(page) {
     }
     
     // Select first available time
-    console.log(`Selecting first time slot using ${selectedSelector}`);
+
     await page.locator(selectedSelector).first().click();
     await page.waitForTimeout(2000);
     
     // Check if second picker is enabled now
     const isSecondPickerEnabled = await page.locator('.time-picker-input').nth(1).isEnabled();
-    console.log('Second time picker enabled:', isSecondPickerEnabled);
+
     
     if (!isSecondPickerEnabled) {
-      console.log('Second time picker still disabled after selecting start time');
+
       return false;
     }
     
     // Click second time picker
-    console.log('Clicking second time picker');
+
     await page.locator('.time-picker-input').nth(1).click();
     await page.waitForTimeout(2000);
     
     // Select last available end time
     const endTimeOptionsCount = await page.locator(selectedSelector).count();
-    console.log(`Found ${endTimeOptionsCount} end time options`);
+
     
     if (endTimeOptionsCount === 0) {
-      console.log('No end time options available');
+
       return false;
     }
     
     // Select the last time slot (for maximum duration)
-    console.log('Selecting last time slot');
+
     const timeOptions = await page.locator(selectedSelector).all();
     await timeOptions[timeOptions.length - 1].click();
     await page.waitForTimeout(2000);
@@ -132,7 +132,7 @@ test.describe('Payment Flow Tests', () => {
   test.beforeAll(async () => {
     try {
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
     } catch (error) {
       console.error('Error in test setup:', error);
       testData = {
@@ -157,7 +157,7 @@ test.describe('Payment Flow Tests', () => {
   test.beforeEach(async ({ page }) => {
     try {
       await page.goto('/');
-      console.log('Navigated to home page');
+
       
       await page.fill('input[type="email"]', testData.credentials.email);
       await page.fill('input[type="password"]', testData.credentials.password);
@@ -165,7 +165,7 @@ test.describe('Payment Flow Tests', () => {
       await page.click('.submit-container > .submit');
       await page.waitForTimeout(3000);
       
-      console.log('URL after login:', page.url());
+
     } catch (error) {
       console.error('Error during login:', error);
       // Take a screenshot to help debug login issues
@@ -187,7 +187,7 @@ test.describe('Payment Flow Tests', () => {
     
     // Try to find what's on the page
     const pageContent = await page.content();
-    console.log('Page content preview:', pageContent.substring(0, 500));
+
     
     // Try to get a listing ID from the API directly
     const listingId = await page.evaluate(async () => {
@@ -211,27 +211,27 @@ test.describe('Payment Flow Tests', () => {
     const titleVisible = await page.locator('.listing-title').first().isVisible();
     const bookingCardVisible = await page.locator('.booking-card').isVisible();
     
-    console.log('Title visible:', titleVisible);
-    console.log('Booking card visible:', bookingCardVisible);
+
+
     
     if (!titleVisible || !bookingCardVisible) {
-      console.log('Not on listing details page, ending test early');
+
       return;
     }
     
     // Find the "Book Now" button in the booking card
     const bookNowVisible = await page.locator('.booking-submit-button').isVisible();
-    console.log('Book Now button visible:', bookNowVisible);
+
     
     if (!bookNowVisible) {
-      console.log('Book Now button not found, ending test early');
+
       return;
     }
     
     // Before clicking, make sure we have valid date selection
     // For daily booking
     if (await page.locator('.booking-card[data-mode="day"]').count() > 0) {
-      console.log('Daily booking mode detected');
+
       
       // If date pickers are visible, select dates
       if (await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -248,7 +248,7 @@ test.describe('Payment Flow Tests', () => {
     } 
     // For hourly booking
     else {
-      console.log('Hourly booking mode detected');
+
       
       // Select a date if needed
       if (await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -262,7 +262,7 @@ test.describe('Payment Flow Tests', () => {
       // Use the helper function to select time slots
       const timeSelectionSuccessful = await selectTimeSlots(page);
       if (!timeSelectionSuccessful) {
-        console.log('Could not select time slots properly, attempting to bypass time selection for test purposes');
+
         
         // Manual injection of times via page.evaluate as a last resort
         await page.evaluate(() => {
@@ -288,7 +288,7 @@ test.describe('Payment Flow Tests', () => {
                 endTime: endDate
               });
               
-              console.log('Injected time values directly');
+
               return true;
             }
           } catch (e) {
@@ -304,10 +304,10 @@ test.describe('Payment Flow Tests', () => {
     
     // Check if Book Now button is enabled
     const isBookNowEnabled = await page.locator('.booking-submit-button').isEnabled();
-    console.log('Book Now button enabled:', isBookNowEnabled);
+
     
     if (!isBookNowEnabled) {
-      console.log('Book Now button is disabled, cannot proceed with test');
+
       return;
     }
     
@@ -320,24 +320,24 @@ test.describe('Payment Flow Tests', () => {
     
     // Check for the payment modal
     const paymentModalVisible = await page.locator('.payment-modal').isVisible();
-    console.log('Payment modal visible:', paymentModalVisible);
+
     
     // Check for the payment form within the modal
     const paymentFormVisible = await page.locator('.payment-form').isVisible();
-    console.log('Payment form visible:', paymentFormVisible);
+
     
     // Check for payment amount in the form
     if (paymentFormVisible) {
       const paymentDetailsVisible = await page.locator('.payment-details').isVisible();
       if (paymentDetailsVisible) {
         const paymentDetails = await page.locator('.payment-details').textContent();
-        console.log('Payment details text:', paymentDetails);
+
         
         // Extract amount if possible
         const amountMatch = paymentDetails.match(/\$(\d+\.?\d*)/);
         if (amountMatch) {
           const amount = parseFloat(amountMatch[1]);
-          console.log('Payment amount:', amount);
+
           expect(amount).toBeGreaterThan(0);
         }
       }
@@ -363,14 +363,14 @@ test.describe('Payment Flow Tests', () => {
     
     // Make sure booking card is visible
     if (!await page.locator('.booking-card').isVisible()) {
-      console.log('Booking card not visible, skipping test');
+
       return;
     }
     
     // Before clicking, make sure we have valid date selection
     // For daily booking
     if (await page.locator('.booking-card[data-mode="day"]').count() > 0) {
-      console.log('Daily booking mode detected');
+
       
       // Select dates
       if (await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -385,7 +385,7 @@ test.describe('Payment Flow Tests', () => {
     } 
     // For hourly booking
     else {
-      console.log('Hourly booking mode detected');
+
       
       // Select a date
       if (await page.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -396,7 +396,7 @@ test.describe('Payment Flow Tests', () => {
       // Use the helper function to select time slots
       const timeSelectionSuccessful = await selectTimeSlots(page);
       if (!timeSelectionSuccessful) {
-        console.log('Could not select time slots properly, skipping test');
+
         return;
       }
     }
@@ -404,7 +404,7 @@ test.describe('Payment Flow Tests', () => {
     // Check if Book Now button is enabled 
     const isBookNowEnabled = await page.locator('.booking-submit-button').isEnabled();
     if (!isBookNowEnabled) {
-      console.log('Book Now button is disabled, skipping test');
+
       return;
     }
     
@@ -414,12 +414,12 @@ test.describe('Payment Flow Tests', () => {
     
     // Wait for payment modal
     await page.waitForSelector('.payment-modal', { timeout: 5000 }).catch(() => {
-      console.log('Payment modal not found');
+
     });
     
     // Wait for iframe to be available
     await page.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 10000 }).catch(() => {
-      console.log('Stripe iframe not found');
+
     });
     
     // Take screenshot of the modal with iframes
@@ -434,12 +434,12 @@ test.describe('Payment Flow Tests', () => {
         allow: iframe.allow || 'No allow attribute'
       }));
     });
-    console.log('Available Stripe iframes:', iframeDetails);
+
     
     // Now specifically target the card input iframe by title
     const cardInputIframe = page.frameLocator('iframe[title="Secure card payment input frame"]');
     if (!cardInputIframe) {
-      console.log('Could not find the card input iframe by title, skipping test');
+
       return;
     }
     
@@ -458,15 +458,15 @@ await page.waitForTimeout(2000);
 // Check if the button is enabled before trying to click it
 const payButton = page.locator('.payment-button');
 const isPayButtonEnabled = await payButton.isEnabled().catch(() => false);
-console.log('Pay Now button enabled:', isPayButtonEnabled);
+
 
 if (!isPayButtonEnabled) {
   // If button remains disabled, consider the test as "passed" since we at least entered valid card info
-  console.log('Pay button remains disabled - this is expected with test card number');
+
   
   // Check if form shows any Stripe validation messages
   const stripeErrorMessage = await cardInputIframe.locator('.StripeElement--invalid, .StripeElement-input--invalid').isVisible().catch(() => false);
-  console.log('Stripe error message visible:', stripeErrorMessage);
+
   
   // Take screenshot of the validation state
   await page.screenshot({ path: 'stripe-validation-state.png' });
@@ -491,7 +491,7 @@ await payButton.click();
       
       if (errorVisible) {
         const errorText = await page.locator('.payment-error, [data-testid="payment-error"], .payment-error-modal').textContent();
-        console.log('Error message:', errorText);
+
         expect(errorText.toLowerCase()).toContain('card');
       }
       
@@ -535,7 +535,7 @@ await payButton.click();
       const isListingPage = await titleElement.isVisible().catch(() => false);
       
       if (!isListingPage) {
-        console.log('Not on listing page, skipping test');
+
         await newContext.close();
         return;
       }
@@ -572,21 +572,21 @@ await payButton.click();
         }
       });
       
-      console.log('Listing info from browser:', listingInfo);
+
       
       // If we couldn't get the price, set a default value for testing
       let basePrice = listingInfo.basePrice || 50;
       let isHourly = listingInfo.isHourly;
       
-      console.log('Using base price:', basePrice);
-      console.log('Is hourly pricing:', isHourly);
+
+
       
       // Select dates or times based on the booking type
       let duration = 1;
       
       // For daily booking
       if (!isHourly) {
-        console.log('Daily booking mode detected');
+
         
         // Select dates
         if (await newPage.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -606,7 +606,7 @@ await payButton.click();
       } 
       // For hourly booking
       else {
-        console.log('Hourly booking mode detected');
+
         
         // Select a date
         if (await newPage.locator('.react-datepicker__day:not(.react-datepicker__day--disabled)').first().isVisible()) {
@@ -629,7 +629,7 @@ await payButton.click();
           
           // Check if second time picker is enabled
           const isSecondEnabled = await newPage.locator('.time-picker-input').nth(1).isEnabled();
-          console.log('Second time picker enabled:', isSecondEnabled);
+
           
           if (isSecondEnabled) {
             // Click second time picker
@@ -649,7 +649,7 @@ await payButton.click();
             await newPage.waitForTimeout(1000);
           }
         } catch (e) {
-          console.log('Error during time selection:', e.message);
+
           // Continue with test - we'll use the default duration
         }
         
@@ -658,37 +658,37 @@ await payButton.click();
         // Try to get the duration from the UI
         try {
           const durationText = await newPage.locator('.duration').textContent();
-          console.log('Duration text:', durationText);
+
           const durationMatch = durationText.match(/(\d+)/);
           if (durationMatch) {
             duration = parseInt(durationMatch[1], 10);
           }
         } catch (e) {
           // Use default duration
-          console.log('Could not determine duration from UI, using default:', duration);
+
         }
       }
       
       // Calculate expected price
       const expectedPrice = basePrice * duration;
-      console.log(`Expected price for ${duration} ${isHourly ? 'hours' : 'days'}: $${expectedPrice}`);
+
       
       // Check the calculated total in the booking summary
       try {
         const totalPriceText = await newPage.locator('.total-price').textContent();
-        console.log('Total price text in summary:', totalPriceText);
+
         
         // Extract the displayed amount
         const totalMatch = totalPriceText.match(/\$(\d+\.?\d*)/);
         if (totalMatch && basePrice > 0) {
           const displayedTotalAmount = parseFloat(totalMatch[1]);
-          console.log('Displayed total amount in summary:', displayedTotalAmount);
+
           
           // Verify the amount matches our calculation (allow for small differences)
           expect(Math.abs(displayedTotalAmount - expectedPrice)).toBeLessThan(1);
         }
       } catch (e) {
-        console.log('Could not verify total price from UI:', e.message);
+
       }
       
       // Check if Book Now button is enabled
@@ -696,7 +696,7 @@ await payButton.click();
       const isEnabled = await bookNowButton.isEnabled().catch(() => false);
       
       if (!isEnabled) {
-        console.log('Book Now button is disabled, test partially completed');
+
         // Test passes if we at least verified the price calculation
         await newContext.close();
         return;
@@ -710,18 +710,18 @@ await payButton.click();
         
         // Check for payment modal and amount
         const paymentDetails = await newPage.locator('.payment-details').textContent().catch(() => '');
-        console.log('Payment details text:', paymentDetails);
+
         
         const amountMatch = paymentDetails.match(/\$(\d+\.?\d*)/);
         if (amountMatch && basePrice > 0) {
           const displayedAmount = parseFloat(amountMatch[1]);
-          console.log('Displayed payment amount:', displayedAmount);
+
           
           // Verify payment amount matches expected
           expect(Math.abs(displayedAmount - expectedPrice)).toBeLessThan(1);
         }
       } catch (e) {
-        console.log('Error checking payment modal:', e.message);
+
         // The test can still pass if we verified the price in the summary
       }
     } catch (error) {

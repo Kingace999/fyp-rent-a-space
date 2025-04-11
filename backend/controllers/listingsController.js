@@ -22,16 +22,16 @@ const createListing = async (req, res) => {
         if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
             return res.status(400).json({ message: "Invalid amenities format" });
         }
-        console.log('Received amenities:', amenities);
-        console.log('Received customAmenities:', customAmenities);
+
+
 
         if (!title || !description || !type || !price || !location || !latitude || !longitude) {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
         if (!Array.isArray(amenities) || !Array.isArray(customAmenities)) {
-            console.log('Received amenities:', amenities);
-            console.log('Received customAmenities:', customAmenities);
+
+
             return res.status(400).json({ message: "Invalid amenities format" });
         }
 

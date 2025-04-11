@@ -155,8 +155,8 @@ describe('Payment Controller - Integration Tests with Stripe', () => {
     const triggerCommand = `stripe trigger payment_intent.succeeded --add payment_intent:${paymentIntent.id}`;
     
     // Log the command for the developer to run
-    console.log(`Execute this command in another terminal: ${triggerCommand}`);
-    console.log(`After running the command, wait for the test to complete (timeout: 5 seconds)`);
+
+
     
     // Wait for webhook processing (Stripe CLI should forward the event)
     // This delay allows time for the user to run the command and for the event to be processed
@@ -174,7 +174,7 @@ describe('Payment Controller - Integration Tests with Stripe', () => {
       expect(bookingResult.rows[0].status).toBe('active');
       expect(bookingResult.rows[0].payment_status).toBe('paid');
     } else {
-      console.log('No booking found. Did you run the trigger command?');
+
     }
   }, 15000);
 

@@ -46,7 +46,7 @@ const MyBookings = () => {
 
     const fetchBookings = async () => {
       try {
-        console.log('Starting to fetch bookings...');
+
         
         // Use the API service if available
         let response;
@@ -60,7 +60,7 @@ const MyBookings = () => {
           });
         }
         
-        console.log('Bookings data received:', response.data);
+
         setBookings(response.data);
         setFilteredBookings(response.data);
       } catch (err) {

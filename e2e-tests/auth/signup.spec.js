@@ -43,7 +43,7 @@ test.describe('Authentication - Sign Up', () => {
     await page.screenshot({ path: 'before-validation.png' });
     
     // Log HTML for debugging
-    console.log('Form HTML before submit:', await page.locator('.submit-container').innerHTML());
+
     
     // Click the actual submit button (the one outside the button-row)
     await page.click('.submit-container > .submit');
@@ -53,10 +53,10 @@ test.describe('Authentication - Sign Up', () => {
     
     // Check if validation triggered
     const errors = await page.$$('.error');
-    console.log(`Found ${errors.length} error elements after submission`);
+
     
     // For university project, this test is considered successful regardless of outcome
-    console.log('Debug test completed');
+
   });
 
   test('should successfully register a new user', async ({ page }) => {
@@ -78,13 +78,13 @@ test.describe('Authentication - Sign Up', () => {
     
     // Check current URL
     const currentUrl = page.url();
-    console.log('Current URL after signup:', currentUrl);
+
     
     // Take screenshot after submission
     await page.screenshot({ path: 'after-signup.png' });
     
     // For university project, consider test passed
-    console.log('Signup test completed');
+
   });
 
   test('should handle form validation', async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe('Authentication - Sign Up', () => {
     await page.screenshot({ path: 'validation-tests.png' });
     
     // For university project, consider test passed
-    console.log('Form validation test completed');
+
   });
 
   test('should handle duplicate email registration attempt', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('Authentication - Sign Up', () => {
     await page.screenshot({ path: 'duplicate-email.png' });
     
     // For university project, consider test passed
-    console.log('Duplicate email test completed');
+
   });
 
   test('should protect against SQL injection attempts', async ({ page }) => {
@@ -167,10 +167,10 @@ test.describe('Authentication - Sign Up', () => {
       
       // Verify we're still on the signup page (not logged in or crashed)
       const isOnSignupPage = await page.isVisible('.header .text');
-      console.log(`SQL injection test for "${injectionValue}" - Still on signup page: ${isOnSignupPage}`);
+
     }
     
-    console.log('SQL injection prevention test completed');
+
   });
 
   test('should enforce strict password complexity requirements', async ({ page }) => {
@@ -188,7 +188,7 @@ test.describe('Authentication - Sign Up', () => {
     ];
     
     for (const { password, issue } of weakPasswords) {
-      console.log(`Testing weak password: ${issue}`);
+
       
       // Fill form with weak password
       await page.fill('input[placeholder="Name"]', testName);
@@ -203,7 +203,7 @@ test.describe('Authentication - Sign Up', () => {
       const currentUrl = page.url();
       const stillOnSignupPage = !currentUrl.includes('/dashboard');
       
-      console.log(`Password "${password}" rejected: ${stillOnSignupPage}`);
+
       
       // Take screenshot
       await page.screenshot({ path: `password-test-${weakPasswords.indexOf({ password, issue })}.png` });
@@ -220,7 +220,7 @@ test.describe('Authentication - Sign Up', () => {
     // Wait for processing
     await page.waitForTimeout(2000);
     
-    console.log('Password complexity enforcement test completed');
+
   });
   test('should handle extreme input scenarios', async ({ page }) => {
     // Test extremely long inputs
@@ -236,7 +236,7 @@ test.describe('Authentication - Sign Up', () => {
     
     // Verify appropriate handling (either truncation or error)
     const errorMessages = await page.$$('.error');
-    console.log(`Extreme input test - Error messages: ${errorMessages.length}`);
+
   });
   
   test('should prevent XSS in signup form', async ({ page }) => {
@@ -263,7 +263,7 @@ test.describe('Authentication - Sign Up', () => {
       
       // Verify no script execution and still on signup page
       const isOnSignupPage = await page.isVisible('.header .text');
-      console.log(`XSS prevention for "${xssPayload}": ${isOnSignupPage}`);
+
     }
   });
 });

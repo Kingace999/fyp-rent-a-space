@@ -16,7 +16,7 @@ async function initTestDatabase() {
   });
 
   try {
-    console.log('Initializing test database schema...');
+
     
     const client = await pool.connect();
     try {
@@ -33,7 +33,7 @@ async function initTestDatabase() {
       `);
       
       if (!tableExists.rows[0].exists) {
-        console.log('Creating database schema for e2e tests...');
+
         
         // Create users table matching your actual schema
         await client.query(`
@@ -161,9 +161,9 @@ async function initTestDatabase() {
         await client.query(`CREATE INDEX idx_listings_user_id ON listings(user_id)`);
         await client.query(`CREATE INDEX idx_listings_verified ON listings(is_verified)`);
         
-        console.log('Database schema created successfully');
+
       } else {
-        console.log('Database schema already exists');
+
       }
       
       await client.query('COMMIT');
@@ -174,7 +174,7 @@ async function initTestDatabase() {
       client.release();
     }
     
-    console.log('Test database initialization complete');
+
   } catch (error) {
     console.error('Failed to initialize test database:', error);
   } finally {

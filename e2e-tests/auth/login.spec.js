@@ -21,7 +21,7 @@ test.describe('Authentication - Login', () => {
   test.beforeAll(async () => {
     try {
       testData = await setupTestDatabase();
-      console.log('Test setup complete with user:', testData.credentials.email);
+
     } catch (error) {
       console.error('Error in test setup:', error);
       // Provide fallback test data
@@ -48,7 +48,7 @@ test.describe('Authentication - Login', () => {
     await page.screenshot({ path: 'before-login.png' });
     
     // Log the test credentials
-    console.log('Attempting login with:', testData.credentials);
+
     
     // Fill in the login form
     await page.fill('input[type="email"]', testData.credentials.email);
@@ -65,10 +65,10 @@ test.describe('Authentication - Login', () => {
 
     // Log current URL after login
     const currentUrl = page.url();
-    console.log('Current URL after login:', currentUrl);
+
     
     // For university project, consider test passed
-    console.log('Login test completed');
+
   });
 
   test('should successfully log in with valid credentials', async ({ page }) => {
@@ -84,12 +84,12 @@ test.describe('Authentication - Login', () => {
     
     // Check current URL
     const currentUrl = page.url();
-    console.log('Current URL after login:', currentUrl);
+
     
     // Check if we're redirected to dashboard
     expect(currentUrl).toContain('/dashboard');
     
-    console.log('Successful login test completed');
+
   });
 
   test('should handle invalid credentials', async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe('Authentication - Login', () => {
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/dashboard');
     
-    console.log('Invalid credentials test completed');
+
   });
 
   test('should validate form fields', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('Authentication - Login', () => {
     await page.click('.submit-container > .submit');
     await page.waitForTimeout(1000);
     
-    console.log('Form validation test completed');
+
   });
 
   test('should protect against SQL injection in login form', async ({ page }) => {
@@ -166,13 +166,13 @@ test.describe('Authentication - Login', () => {
       const notLoggedIn = !currentUrl.includes('/dashboard');
       
       // Log results
-      console.log(`SQL injection test for "${injectionValue}" - Login prevented: ${notLoggedIn}`);
+
       
       // Assert login was prevented
       expect(notLoggedIn).toBeTruthy();
     }
     
-    console.log('SQL injection prevention test completed');
+
   });
 
   test('should prevent XSS in login form', async ({ page }) => {
@@ -197,14 +197,14 @@ test.describe('Authentication - Login', () => {
       
       // Verify no script execution and still on login page
       const isOnLoginPage = await page.isVisible('.header .text');
-      console.log(`XSS prevention for "${xssPayload}": ${isOnLoginPage}`);
+
       
       // Verify we're not redirected to dashboard
       const currentUrl = page.url();
       expect(currentUrl).not.toContain('/dashboard');
     }
     
-    console.log('XSS prevention in login form test completed');
+
   });
 
   test('should handle extreme input scenarios', async ({ page }) => {
@@ -222,7 +222,7 @@ test.describe('Authentication - Login', () => {
     const currentUrl = page.url();
     const notLoggedIn = !currentUrl.includes('/dashboard');
     
-    console.log(`Extreme input test - Login prevented: ${notLoggedIn}`);
+
     expect(notLoggedIn).toBeTruthy();
   });
 

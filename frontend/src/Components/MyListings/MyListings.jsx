@@ -271,7 +271,7 @@ const MyListings = () => {
       available_end_time: formatTime(listing.available_end_time),
     };
   
-    console.log('Processed listing for editing:', processedListing);
+
   
     setCurrentListing(processedListing);
     setShowEditModal(true);

@@ -187,7 +187,7 @@ const getUserBookings = async (req, res) => {
     try {
         const userId = req.user.userId;
         
-        console.log('Fetching bookings for user:', userId);
+
 
         // Update completed bookings
         await client.query(
@@ -224,8 +224,8 @@ const getUserBookings = async (req, res) => {
             [userId]
         );
 
-        console.log('Found bookings:', result.rows.length);
-        console.log('Latest booking:', result.rows[0]);
+
+
 
         res.status(200).json(result.rows);
     } catch (error) {

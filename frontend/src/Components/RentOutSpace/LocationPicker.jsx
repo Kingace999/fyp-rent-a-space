@@ -70,8 +70,8 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
         }));
 
         // Debugging: Log updated state
-        console.log('Updated coordinates:', { latitude: lat, longitude: lng });
-        console.log('Updated location:', address);
+
+
       }
     } catch (error) {
       console.error('Error getting address from map click:', error);
@@ -79,7 +79,7 @@ const LocationSection = ({ spaceDetails, setSpaceDetails, isSubmitting, errors }
   }, [isSubmitting, setSpaceDetails]);
 
   // Debugging: Log state updates
-  console.log('Current spaceDetails:', spaceDetails);
+
 
   return (
     <div className="form-section">

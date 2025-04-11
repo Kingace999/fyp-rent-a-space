@@ -38,8 +38,8 @@ describe('Auth Controller', () => {
       .send(userData);
     
     // Log response body for debugging
-    console.log('Response status:', response.status);
-    console.log('Response body:', response.body);
+
+
     
     expect(response.status).toBe(201);
     expect(response.body.status).toBe('success');

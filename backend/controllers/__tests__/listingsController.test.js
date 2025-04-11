@@ -318,7 +318,7 @@ describe('Listings Controller', () => {
   test('should handle multiple image uploads', async () => {
     // Skip this test if no image directory available
     if (!fs.existsSync(path.join(__dirname))) {
-      console.log('Skipping multiple image test - no directory access');
+
       return;
     }
 

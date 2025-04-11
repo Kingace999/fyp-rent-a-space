@@ -121,7 +121,7 @@ const BookingForm = ({ listing, onSubmit }) => {
       date.setSeconds(0);
       date.setMilliseconds(0);
       
-      console.log(`Parsing time ${timeStr} to:`, date.toLocaleTimeString());
+
       return date;
     } catch (error) {
       console.error('Error parsing time:', error);
@@ -225,16 +225,10 @@ const BookingForm = ({ listing, onSubmit }) => {
     const endLimit = new Date(startDate);
     endLimit.setHours(availableEndTime.getHours(), availableEndTime.getMinutes(), 0, 0);
     
-    console.log('Time range check:', {
-      timeToCheck: timeToCheck.toLocaleTimeString(),
-      startLimit: startLimit.toLocaleTimeString(),
-      endLimit: endLimit.toLocaleTimeString(),
-      availableStartTime: availableStartTime.toLocaleTimeString(),
-      availableEndTime: availableEndTime.toLocaleTimeString()
-    });
+    
     
     if (timeToCheck < startLimit || timeToCheck >= endLimit) {
-      console.log('Time outside available hours');
+
       return false;
     }
   
@@ -249,12 +243,7 @@ const BookingForm = ({ listing, onSubmit }) => {
       if (sameDate) {
         // Check if time slot is within a booking
         const isWithinBooking = timeToCheck >= bookingStart && timeToCheck < bookingEnd;
-        console.log('Time availability check:', {
-          timeToCheck: timeToCheck.toLocaleTimeString(),
-          bookingStart: bookingStart.toLocaleTimeString(),
-          bookingEnd: bookingEnd.toLocaleTimeString(),
-          isWithinBooking
-        });
+        
         return isWithinBooking;
       }
       

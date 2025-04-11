@@ -16,16 +16,16 @@ async function testVisionAPI() {
         // Call API with local image file
         const [result] = await client.labelDetection(filePath);
 
-        console.log("Raw API Response:", JSON.stringify(result, null, 2));
+
 
         if (!result.labelAnnotations || result.labelAnnotations.length === 0) {
-            console.log('No labels detected.');
+
             return;
         }
 
-        console.log('Detected Labels:');
+
         result.labelAnnotations.forEach(label => {
-            console.log(`- ${label.description} (Confidence: ${label.score.toFixed(2)})`);
+
         });
 
     } catch (error) {
