@@ -40,9 +40,14 @@ app.use(
 
 // General Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://fyp-rent-a-space.vercel.app'],
+    origin: [
+      'http://localhost:3000',
+      'https://fyp-rent-a-space.vercel.app',
+      'https://fyp-rent-a-space-omar-azizs-projects-5bdd04b5.vercel.app'
+    ],
     credentials: true
-}));
+  }));
+  
 
 app.use(bodyParser.json());
 app.use(express.json());
