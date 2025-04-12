@@ -74,11 +74,10 @@ const signup = async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = await generateTokens(newUser.rows[0].id);
     
-    // set HTTP-only cookie with refresh token
-    
+    // set HTTP-only cookie with refresh token - always use secure for cross-origin
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always secure for cross-origin requests
         sameSite: 'none',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -137,10 +136,10 @@ const login = async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = await generateTokens(user.rows[0].id);
     
-    // Set HTTP-only cookie with refresh token
+    // Set HTTP-only cookie with refresh token - always use secure for cross-origin
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always secure for cross-origin requests
         sameSite: 'none',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -166,14 +165,10 @@ const login = async (req, res) => {
 };
 
 // Refresh access token
-// Refresh access token
 const refresh = async (req, res) => {
     try {
-
-      
       // Try to get refresh token from cookie, then from request body
       const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-
       
       if (!refreshToken) {
         return res.status(401).json({ 
@@ -211,19 +206,15 @@ const logout = async (req, res) => {
       // Try to get refresh token from cookie, then from request body
       const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
       
-
-
-
-      
       if (refreshToken) {
         // Revoke the refresh token
         await revokeRefreshToken(refreshToken);
       }
       
-      // Clear the refresh token cookie regardless
+      // Clear the refresh token cookie regardless - always use secure for cross-origin
       res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always secure for cross-origin requests
         sameSite: 'none',
         path: '/'
       });

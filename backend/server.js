@@ -26,12 +26,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS comes first - before ANY other middleware
+// CORS comes first - before ANY other middleware
 app.use(cors({
-  origin: 'https://fyp-rent-a-space.vercel.app',
+  origin: process.env.CLIENT_URL || 'https://fyp-rent-a-space.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
-
+// Add this right after your CORS middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
+  
+  // Capture the response to log headers
+  const originalSend = res.send;
+  res.send = function(...args) {
+    console.log(`Response headers for ${req.method} ${req.url}:`, res.getHeaders());
+    return originalSend.apply(res, args);
+  };
+  
+  next();
+});
 // Enable preflight for all routes
 app.options('*', cors());
 
