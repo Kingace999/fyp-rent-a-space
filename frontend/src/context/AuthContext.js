@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Handle token refresh
+  // Handle token refresh morerrrr
   const refreshToken = useCallback(async () => {
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/refresh`, {}, {
