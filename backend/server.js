@@ -40,9 +40,10 @@ app.use(
 
 // General Middleware
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'https://fyp-rent-a-space.vercel.app'],
     credentials: true
 }));
+
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
