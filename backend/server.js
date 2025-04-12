@@ -40,9 +40,10 @@ app.use(
 
 // General Middleware
 app.use(cors({
-    origin: 'https://fyp-rent-a-space.vercel.app',
+    origin: /https:\/\/fyp-rent-a-space.*\.vercel\.app$/,
     credentials: true
   }));
+  
   
   
 
