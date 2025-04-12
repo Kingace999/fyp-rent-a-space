@@ -25,24 +25,25 @@ const client = new vision.ImageAnnotatorClient({
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-//  CORS comes first
-app.use(
-  cors({
-    origin: 'https://fyp-rent-a-space.vercel.app',
-    credentials: true,
-  })
-);
-console.log(' CORS middleware has been registered');
+// CORS comes first - before ANY other middleware
+app.use(cors({
+  origin: 'https://fyp-rent-a-space.vercel.app',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
+// Enable preflight for all routes
+app.options('*', cors());
 
+console.log('CORS middleware has been registered');
 
-//  Create uploads directory if it doesn't exist
+// Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-//  Parse normal JSON for all routes except /payments/webhook
+// Parse normal JSON for all routes except /payments/webhook
 app.use((req, res, next) => {
   if (req.originalUrl === '/payments/webhook') {
     express.raw({ type: 'application/json' })(req, res, next);
@@ -60,14 +61,14 @@ app.get('/', (req, res) => {
   res.json({ message: 'Testing to see if works' });
 });
 
-//  Test DB connection
+// Test DB connection
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
     console.error('Error connecting to the database:', err);
   }
 });
 
-//  Routes
+// Routes
 app.use('/auth', authRoutes);
 app.use('/profile', authenticateToken, profileRoutes);
 app.use('/listings', listingsRoutes);
@@ -78,10 +79,10 @@ app.use('/notifications', authenticateToken, notificationsRoutes);
 app.use('/messages', authenticateToken, messagesRoutes);
 app.use('/space-analysis', spaceAnalysisRoutes);
 
-//  Start server if run directly
+// Start server if run directly
 if (require.main === module) {
   const server = app.listen(PORT, () => {
-    console.log(` Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
 
   app.close = () => {

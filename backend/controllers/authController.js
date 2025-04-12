@@ -78,8 +78,8 @@ const signup = async (req, res) => {
     
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, 
-        sameSite: 'lax', 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
@@ -140,8 +140,8 @@ const login = async (req, res) => {
     // Set HTTP-only cookie with refresh token
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, // Set to false for local development over HTTP
-        sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
@@ -221,7 +221,12 @@ const logout = async (req, res) => {
       }
       
       // Clear the refresh token cookie regardless
-      res.clearCookie('refreshToken');
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
+        path: '/'
+      });
       
       res.status(200).json({
         status: 'success',
