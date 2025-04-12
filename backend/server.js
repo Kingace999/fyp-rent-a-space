@@ -11,7 +11,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const listingsRoutes = require('./routes/listingsRoutes');
 const bookingRoutes = require('./routes/bookingsRoutes');
 const reviewsRoutes = require('./routes/reviewsRoutes');
-const paymentRoutes = require('./routes/paymentRoutes'); 
+const paymentRoutes = require('./routes/paymentRoutes');
 const notificationsRoutes = require('./routes/notificationRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const vision = require('@google-cloud/vision');
@@ -19,82 +19,78 @@ const spaceAnalysisRoutes = require('./routes/spaceAnalysisRoutes');
 const pool = require('./config/db');
 
 const client = new vision.ImageAnnotatorClient({
-    keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
-// Initialize the app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Middleware for Stripe webhooks
+//  CORS comes first
 app.use(
-    '/payments/webhook',
-    express.raw({ type: 'application/json' })
+  cors({
+    origin: 'https://fyp-rent-a-space.vercel.app',
+    credentials: true,
+  })
 );
-
-// General Middleware
-app.use(cors({
-    origin: /https:\/\/fyp-rent-a-space.*\.vercel\.app$/,
-    credentials: true
-  }));
 console.log(' CORS middleware has been registered');
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://fyp-rent-a-space.vercel.app');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
 });
 
-  
-  
+//  Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+//  Parse normal JSON for all routes except /payments/webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === '/payments/webhook') {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 app.use(bodyParser.json());
-app.use(express.json());
 app.use(cookieParser());
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Test Route for Frontend Connection
+// Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'Testing to see if works' });
+  res.json({ message: 'Testing to see if works' });
 });
 
-// Test Database Connection
+//  Test DB connection
 pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-    } else {
-
-    }
+  if (err) {
+    console.error('Error connecting to the database:', err);
+  }
 });
 
-// Routes
+//  Routes
 app.use('/auth', authRoutes);
 app.use('/profile', authenticateToken, profileRoutes);
 app.use('/listings', listingsRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/reviews', reviewsRoutes);
-app.use('/payments', paymentRoutes); 
+app.use('/payments', paymentRoutes);
 app.use('/notifications', authenticateToken, notificationsRoutes);
 app.use('/messages', authenticateToken, messagesRoutes);
 app.use('/space-analysis', spaceAnalysisRoutes);
 
-// Only start the server if this file is run directly (not required by tests)
+//  Start server if run directly
 if (require.main === module) {
-    const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
+    console.log(` Server is running on port ${PORT}`);
+  });
 
-
-    });
-    
-    app.close = () => {
-        server.close();
-    };
+  app.close = () => {
+    server.close();
+  };
 }
 
-// Export the app for testing
 module.exports = app;
