@@ -23,7 +23,7 @@ const client = new vision.ImageAnnotatorClient({
 });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 // ======== MANUAL CORS HANDLING (BEFORE ANY MIDDLEWARE) ========
 // This explicitly handles all CORS requests including preflight
