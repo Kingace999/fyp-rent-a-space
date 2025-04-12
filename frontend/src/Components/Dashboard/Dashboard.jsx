@@ -45,7 +45,7 @@ const Dashboard = () => {
       setIsLoading(true);
       
       // Create URL with query parameters for filtering
-      l
+      
       let url = `${process.env.REACT_APP_API_URL}/listings?page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
 
       // Add filter parameters if they exist
