@@ -34,11 +34,7 @@ app.use(
 );
 console.log(' CORS middleware has been registered');
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://fyp-rent-a-space.vercel.app');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  next();
-});
+
 
 //  Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
