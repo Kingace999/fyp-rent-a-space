@@ -18,9 +18,25 @@ const vision = require('@google-cloud/vision');
 const spaceAnalysisRoutes = require('./routes/spaceAnalysisRoutes');
 const pool = require('./config/db');
 
-const client = new vision.ImageAnnotatorClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-});
+let client;
+try {
+  if (process.env.GOOGLE_CREDENTIALS) {
+    // Use credentials from environment variable
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    client = new vision.ImageAnnotatorClient({ credentials });
+    console.log("Successfully initialized Vision API with credentials from environment variable");
+  } else {
+    // Fall back to file-based credentials
+    client = new vision.ImageAnnotatorClient({
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    });
+    console.log("Successfully initialized Vision API with credentials from file");
+  }
+} catch (error) {
+  console.error("Failed to initialize Google Vision API client:", error);
+  // Initialize with null to prevent application crash
+  client = null;
+}
 
 const app = express();
 const PORT = process.env.PORT || 8080;
