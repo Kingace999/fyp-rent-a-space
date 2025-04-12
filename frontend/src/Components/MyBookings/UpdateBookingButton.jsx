@@ -49,7 +49,8 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
     const fetchExistingBookings = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/bookings/listing/${booking.listing_id}`,
+          `${process.env.REACT_APP_API_URL}/bookings/listing/${booking.listing_id}`,
+        
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setExistingBookings(response.data.filter(b => b.id !== booking.id));
@@ -486,7 +487,8 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
       if (priceAdjustment?.totalAdjustment < 0) {
         // Handle refund case
         await axios.post(
-          'http://localhost:5000/payments/partial-refund',
+          `${process.env.REACT_APP_API_URL}/payments/partial-refund`,
+        
           {
             bookingId: booking.id,
             refundAmount: Math.abs(priceAdjustment.totalAdjustment),
@@ -525,7 +527,8 @@ const UpdateBookingButton = ({ booking, listing, onUpdate }) => {
       const checkBookingStatus = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:5000/bookings/${booking.id}`,
+            `${process.env.REACT_APP_API_URL}/bookings/${booking.id}`,
+          
             {
               headers: { Authorization: `Bearer ${accessToken}` }
             }

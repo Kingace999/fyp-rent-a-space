@@ -39,7 +39,7 @@ const AnalyzeSpaceButton = ({
       formData.append('image', image);
 
       // Make request to the backend API
-      const response = await axios.post('http://localhost:5000/space-analysis/analyze', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/space-analysis/analyze`, formData, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data'

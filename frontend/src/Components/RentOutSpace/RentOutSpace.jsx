@@ -338,7 +338,8 @@ const RentOutSpace = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/listings', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/listings`, formData, {
+
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data'

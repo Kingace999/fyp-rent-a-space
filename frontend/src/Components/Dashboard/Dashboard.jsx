@@ -45,8 +45,9 @@ const Dashboard = () => {
       setIsLoading(true);
       
       // Create URL with query parameters for filtering
-      let url = `http://localhost:5000/listings?page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
-      
+      l
+      let url = `${process.env.REACT_APP_API_URL}/listings?page=${pageNum}&limit=${ITEMS_PER_PAGE}`;
+
       // Add filter parameters if they exist
       if (filters.spaceType) {
         url += `&spaceType=${filters.spaceType}`;
@@ -92,7 +93,8 @@ const Dashboard = () => {
           setUserData(currentUser);
         } else {
           // If currentUser isn't set yet in auth context (rare case), fetch it
-          const response = await axios.get('http://localhost:5000/auth/user/profile', {
+          const response = await axios.get(`${process.env.REACT_APP_API_URL}/auth/user/profile`, {
+
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -230,7 +232,8 @@ const Dashboard = () => {
           // Only fetch reviews if they haven't been fetched yet
           if (listingCopy.averageRating === undefined) {
             try {
-              const response = await axios.get(`http://localhost:5000/reviews/listing/${listingCopy.id}`);
+              const response = await axios.get(`${process.env.REACT_APP_API_URL}/reviews/listing/${listingCopy.id}`);
+
               
               if (response.data) {
                 const avgRating = parseFloat(response.data.averageRating);
@@ -600,7 +603,8 @@ useEffect(() => {
                     </button>
                   </div>
                   <img 
-                    src={listing.images && listing.images[0] ? `http://localhost:5000${listing.images[0]}` : '/placeholder.jpg'} 
+                    src={listing.images && listing.images[0] ? `${process.env.REACT_APP_API_URL}${listing.images[0]}` : '/placeholder.jpg'}
+
                     alt={listing.title} 
                     className="space-image" 
                   />

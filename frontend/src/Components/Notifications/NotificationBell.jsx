@@ -46,7 +46,8 @@ const NotificationBell = () => {
     if (!isAuthenticated || !accessToken) return;
     
     try {
-      const response = await axios.get('http://localhost:5000/notifications/unread', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications/unread`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
@@ -61,7 +62,8 @@ const NotificationBell = () => {
     if (!isAuthenticated || !accessToken) return;
     
     try {
-      const response = await axios.get('http://localhost:5000/notifications?limit=3', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications?limit=3`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }

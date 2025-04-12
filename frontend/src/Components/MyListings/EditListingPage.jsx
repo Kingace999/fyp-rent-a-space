@@ -11,7 +11,8 @@ const EditListingPage = () => {
     const fetchListing = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await axios.get(`http://localhost:5000/listings/${listingId}`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/listings/${listingId}`, {
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -34,7 +35,8 @@ const EditListingPage = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5000/listings/${listingId}`, formData, {
+      await axios.put(`${process.env.REACT_APP_API_URL}/listings/${listingId}`, formData, {
+
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -60,7 +60,7 @@ const LeaveReviewForm = ({
     try {
       setIsSubmitting(true);
       
-      const response = await fetch(`http://localhost:5000/reviews/${existingReview.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/reviews/${existingReview.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`
@@ -84,7 +84,7 @@ const LeaveReviewForm = ({
     try {
       setIsSubmitting(true);
       
-      const response = await fetch('http://localhost:5000/reviews', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/reviews`, {
         method: existingReview ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',

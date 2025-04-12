@@ -25,7 +25,8 @@ const ManageGuests = ({ listingId, isOpen, onClose }) => {
     setLoading(true);
     
     try {
-      const response = await axios.get(`http://localhost:5000/bookings/listing/${listingId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/listing/${listingId}`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

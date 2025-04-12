@@ -26,7 +26,8 @@ const Notifications = () => {
     
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/notifications', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/notifications`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
@@ -46,7 +47,8 @@ const Notifications = () => {
   const markAsRead = async (e, id) => {
     e.stopPropagation();
     try {
-      await axios.put(`http://localhost:5000/notifications/${id}/read`, null, {
+      await axios.put(`${process.env.REACT_APP_API_URL}/notifications/${id}/read`, null, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
@@ -59,7 +61,8 @@ const Notifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.put('http://localhost:5000/notifications/mark-all-read', null, {
+      await axios.put(`${process.env.REACT_APP_API_URL}/notifications/mark-all-read`, null, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
@@ -73,7 +76,8 @@ const Notifications = () => {
   const dismissNotification = async (e, id) => {
     e.stopPropagation();
     try {
-      await axios.delete(`http://localhost:5000/notifications/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/notifications/${id}`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`
         }

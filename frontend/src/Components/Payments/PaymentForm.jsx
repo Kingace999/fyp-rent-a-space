@@ -49,8 +49,9 @@ export default function PaymentForm({
 
     try {
       const endpoint = isUpdatePayment 
-        ? 'http://localhost:5000/payments/update-payment-intent'
-        : 'http://localhost:5000/payments/create-payment-intent';
+  ? `${process.env.REACT_APP_API_URL}/payments/update-payment-intent`
+  : `${process.env.REACT_APP_API_URL}/payments/create-payment-intent`;
+
 
       const paymentData = isUpdatePayment 
         ? {

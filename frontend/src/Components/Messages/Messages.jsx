@@ -6,7 +6,8 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext'; // Add this import
 import './Messages.css';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = process.env.REACT_APP_API_URL;
+
 
 const EmptyState = ({ type }) => (
   <div className="empty-state">
@@ -103,7 +104,8 @@ const Messages = () => {
         const messageContent = messageQueue[0];
         
         try {
-          await axios.post('http://localhost:5000/messages', {
+          await axios.post(`${process.env.REACT_APP_API_URL}/messages`, {
+
             receiverId: selectedConversation.other_user_id,
             content: messageContent,
             listingId: location.state?.listingId
@@ -181,7 +183,8 @@ const Messages = () => {
 
   const fetchConversations = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/messages/conversations', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/messages/conversations`, {
+
         headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
       });
       setConversations(response.data);
@@ -198,7 +201,8 @@ const Messages = () => {
     try {
       setIsLoading(true);
       
-      const response = await axios.get(`http://localhost:5000/messages/conversation/${receiverId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/messages/conversation/${receiverId}`, {
+
         headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
       });
       
@@ -246,7 +250,8 @@ const Messages = () => {
     setSelectedConversation(conversation);
     if (!conversation.is_read) {
       try {
-        await axios.put(`http://localhost:5000/messages/${conversation.id}/read`, {}, {
+        await axios.put(`${process.env.REACT_APP_API_URL}/messages/${conversation.id}/read`, {}, {
+
           headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
         });
         fetchConversations();

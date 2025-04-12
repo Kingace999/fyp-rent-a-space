@@ -46,7 +46,8 @@ const ReviewsList = ({ isOpen, onClose, listingId }) => {
         limit: 5
       });
       
-      const response = await fetch(`http://localhost:5000/reviews/listing/${listingId}?${queryParams}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/reviews/listing/${listingId}?${queryParams}`);
+
       
       if (!response.ok) {
         throw new Error('Failed to fetch reviews');

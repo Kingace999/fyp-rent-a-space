@@ -21,7 +21,8 @@ const MessageButton = ({ booking }) => {
 
       // First, initiate the conversation
       const initiateResponse = await axios.post(
-        'http://localhost:5000/messages/initiate-booking',
+        `${process.env.REACT_APP_API_URL}/messages/initiate-booking`,
+      
         { bookingId: booking.id },
         {
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -33,7 +34,8 @@ const MessageButton = ({ booking }) => {
       // Only send first message if it's a new conversation
       if (!existingConversation) {
         await axios.post(
-          'http://localhost:5000/messages',
+          `${process.env.REACT_APP_API_URL}/messages`,
+        
           {
             receiverId,
             content: `Hi, I'd like to discuss my booking for: ${booking.title}`,

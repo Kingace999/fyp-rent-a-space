@@ -26,7 +26,8 @@ const MessageHostButton = ({ listingId, listingTitle, hostId }) => {
 
       // First, initiate the conversation
       const initiateResponse = await axios.post(
-        'http://localhost:5000/messages/initiate-listing',
+        `${process.env.REACT_APP_API_URL}/messages/initiate-listing`,
+      
         { listingId },
         {
           headers: { Authorization: `Bearer ${accessToken}` } // Use accessToken from context
@@ -38,7 +39,8 @@ const MessageHostButton = ({ listingId, listingTitle, hostId }) => {
       // Only send first message if it's a new conversation
       if (!existingConversation) {
         await axios.post(
-          'http://localhost:5000/messages',
+          `${process.env.REACT_APP_API_URL}/messages`,
+        
           {
             receiverId,
             content: `Hi, I'm interested in your listing: ${listingTitle}`,

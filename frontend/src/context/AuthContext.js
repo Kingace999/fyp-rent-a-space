@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       
       
       // Call logout endpoint
-      await axios.post('http://localhost:5000/auth/logout', {}, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/auth/logout`, {}, {
         withCredentials: true // Important for cookies
       });
       
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   // Handle token refresh
   const refreshToken = useCallback(async () => {
     try {
-      const response = await axios.post('http://localhost:5000/auth/refresh', {}, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/refresh`, {}, {
         withCredentials: true // Important for cookies
       });
       
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }) => {
       
       
       
-      const response = await axios.post('http://localhost:5000/auth/login', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, {
         email,
         password,
       }, {
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }) => {
       
       
       
-      const response = await axios.post('http://localhost:5000/auth/signup', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/signup`, {
         name,
         email,
         password,
@@ -231,7 +231,7 @@ export const AuthProvider = ({ children }) => {
   const getCurrentUser = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/auth/user/profile', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/auth/user/profile`, {
         withCredentials: true
       });
       setCurrentUser(response.data.user);

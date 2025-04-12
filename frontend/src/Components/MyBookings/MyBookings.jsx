@@ -55,7 +55,8 @@ const MyBookings = () => {
           response = await bookingAPI.getBookings('?include_payments=true');
         } catch {
           // Fall back to direct axios call with accessToken
-          response = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
+          response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/user?include_payments=true`, {
+
             headers: { Authorization: `Bearer ${accessToken}` },
           });
         }
@@ -80,7 +81,8 @@ const MyBookings = () => {
     
     const fetchUserReviews = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/reviews/user', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/reviews/user`, {
+
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         // Convert array of reviews to object for easier lookup
@@ -103,7 +105,8 @@ const MyBookings = () => {
     
     const fetchListingDetails = async (listingId) => {
       try {
-        const response = await axios.get(`http://localhost:5000/listings/${listingId}`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/listings/${listingId}`, {
+
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         setListings(prev => ({
@@ -195,7 +198,8 @@ const handleCancelBooking = async (bookingId) => {
   try {
       // Start cancellation
       const response = await axios.post(
-          `http://localhost:5000/payments/refund/${bookingId}`,
+        `${process.env.REACT_APP_API_URL}/payments/refund/${bookingId}`,
+      
           {},
           {
               headers: { Authorization: `Bearer ${accessToken}` }
@@ -208,8 +212,9 @@ const handleCancelBooking = async (bookingId) => {
       // Poll for status change
       const checkStatus = async () => {
           try {
-              const statusResponse = await axios.get(
-                  `http://localhost:5000/bookings/${bookingId}`,
+            const statusResponse = await axios.get(
+              `${process.env.REACT_APP_API_URL}/bookings/${bookingId}`,
+            
                   {
                       headers: { Authorization: `Bearer ${accessToken}` }
                   }
@@ -247,7 +252,8 @@ const handleCancelBooking = async (bookingId) => {
   // Updated to use auth context
   const handleBookingUpdate = async (updatedBooking) => {
     try {
-      const response = await axios.get('http://localhost:5000/bookings/user', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/user`, {
+
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       setBookings(response.data);
@@ -287,13 +293,15 @@ const handleCancelBooking = async (bookingId) => {
   const refreshData = async () => {
     try {
       // Refresh bookings
-      const bookingsResponse = await axios.get('http://localhost:5000/bookings/user?include_payments=true', {
+      const bookingsResponse = await axios.get(`${process.env.REACT_APP_API_URL}/bookings/user?include_payments=true`, {
+
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       setBookings(bookingsResponse.data);
 
       // Refresh reviews
-      const reviewsResponse = await axios.get('http://localhost:5000/reviews/user', {
+      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_URL}/reviews/user`, {
+
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       const reviewsMap = {};
@@ -386,7 +394,8 @@ const handleCancelBooking = async (bookingId) => {
                   <img
                     src={
                       booking.images && booking.images[0]
-                        ? `http://localhost:5000${booking.images[0]}`
+                      ? `${process.env.REACT_APP_API_URL}${booking.images[0]}`
+
                         : '/default-space.jpg'
                     }
                     alt={booking.title}

@@ -58,7 +58,8 @@ const MyListings = () => {
     if (!isAuthenticated || !accessToken) return;
 
     try {
-      const response = await axios.get('http://localhost:5000/listings/user', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/listings/user`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -204,7 +205,8 @@ const MyListings = () => {
   
   const handleConfirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/listings/${listingToDelete}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/listings/${listingToDelete}`, {
+
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -407,7 +409,8 @@ const handleSave = async () => {
     }
 
     const response = await axios.put(
-      `http://localhost:5000/listings/${currentListing.id}`,
+      `${process.env.REACT_APP_API_URL}/listings/${currentListing.id}`,
+    
       formData,
       {
         headers: {
@@ -473,7 +476,8 @@ const handleSave = async () => {
             {userListings.map((listing) => (
               <div key={listing.id} className="listing-card">
                 <img
-                  src={listing.images && listing.images[0] ? `http://localhost:5000${listing.images[0]}` : '/placeholder.jpg'}
+                  src={listing.images && listing.images[0] ? `${process.env.REACT_APP_API_URL}${listing.images[0]}` : '/placeholder.jpg'}
+
                   alt={listing.title}
                   className="listing-image"
                 />
@@ -805,7 +809,8 @@ const handleSave = async () => {
                         {currentListing.images.map((imagePath, index) => (
                           <div key={index} className="image-preview relative flex items-center bg-gray-50 p-2 rounded">
                             <img
-                              src={`http://localhost:5000${imagePath}`}
+                              src={`${process.env.REACT_APP_API_URL}${listing.images[0]}`}
+
                               alt={`Listing ${index + 1}`}
                               style={{ maxWidth: '100px', maxHeight: '100px', width: 'auto', height: 'auto' }}
                               className="object-contain rounded"

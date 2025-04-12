@@ -25,7 +25,8 @@ const Profile = () => {
   });
   const [isOwnProfile, setIsOwnProfile] = useState(true);
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = process.env.REACT_APP_API_URL;
+
 
   // Fetch profile data from the backend
   useEffect(() => {
@@ -33,11 +34,12 @@ const Profile = () => {
       if (!isAuthenticated || !accessToken) return;
       
       try {
-        let endpoint = 'http://localhost:5000/profile';
+        let endpoint = `${process.env.REACT_APP_API_URL}/profile`;
         
         // If userId is in URL params, fetch that specific user profile
         if (userId) {
-          endpoint = `http://localhost:5000/profile/${userId}`;
+          endpoint = `${process.env.REACT_APP_API_URL}/profile/${userId}`;
+
           setIsOwnProfile(false);
         } else {
           setIsOwnProfile(true);
@@ -93,7 +95,8 @@ const Profile = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/profile/upload-image',
+        `${process.env.REACT_APP_API_URL}/profile/upload-image`,
+      
         formData,
         {
           headers: {
@@ -136,7 +139,8 @@ const Profile = () => {
     
     try {
       const response = await axios.put(
-        'http://localhost:5000/profile',
+        `${process.env.REACT_APP_API_URL}/profile`,
+      
         {
           name: userData.name || '',
           location: userData.location || '',

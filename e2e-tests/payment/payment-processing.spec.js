@@ -188,7 +188,8 @@ test.describe('Payment Processing Tests', () => {
       // Get a listing ID for direct navigation
       const listingId = await page.evaluate(async () => {
         try {
-          const response = await fetch('http://localhost:5000/listings');
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/listings`);
+
           const data = await response.json();
           return data.listings[0]?.id || null;
         } catch (e) {
@@ -421,7 +422,8 @@ test.describe('Payment Processing Tests', () => {
       // Get a listing ID for direct navigation
       const listingId = await newPage.evaluate(async () => {
         try {
-          const response = await fetch('http://localhost:5000/listings');
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/listings`);
+
           const data = await response.json();
           return data.listings[0]?.id || null;
         } catch (e) {
@@ -647,7 +649,8 @@ test.describe('Payment Processing Tests', () => {
       // Get a listing ID for direct navigation
       const listingId = await newPage.evaluate(async () => {
         try {
-          const response = await fetch('http://localhost:5000/listings');
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/listings`);
+
           const data = await response.json();
           return data.listings[0]?.id || null;
         } catch (e) {

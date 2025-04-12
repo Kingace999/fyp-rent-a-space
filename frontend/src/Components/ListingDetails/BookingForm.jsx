@@ -26,7 +26,8 @@ const BookingForm = ({ listing, onSubmit }) => {
 
   const fetchExistingBookings = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/bookings/listing/${listing.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/bookings/listing/${listing.id}`, {
+
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }

@@ -39,7 +39,8 @@ const ListingDetails = () => {
     const fetchListingDetails = async () => {
       try {
         // First fetch listing details - Use accessToken from auth context
-        const listingResponse = await fetch(`http://localhost:5000/listings/${id}`, {
+        const listingResponse = await fetch(`${process.env.REACT_APP_API_URL}/listings/${id}`, {
+
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -54,7 +55,8 @@ const ListingDetails = () => {
   
         // Then fetch reviews data
         try {
-          const reviewsResponse = await fetch(`http://localhost:5000/reviews/listing/${id}`);
+          const reviewsResponse = await fetch(`${process.env.REACT_APP_API_URL}/reviews/listing/${id}`);
+
           if (reviewsResponse.ok) {
             const reviewsData = await reviewsResponse.json();
             setAverageRating(Number(reviewsData.averageRating) || 0);
@@ -123,7 +125,8 @@ const ListingDetails = () => {
           {listing?.images && listing.images.length > 0 ? (
             <>
               <img
-                src={`http://localhost:5000${listing.images[currentImageIndex]}`}
+                src={`${process.env.REACT_APP_API_URL}${listing.images[currentImageIndex]}`}
+
                 alt={`${listing.title} - ${currentImageIndex + 1}`}
                 className="carousel-image"
               />
