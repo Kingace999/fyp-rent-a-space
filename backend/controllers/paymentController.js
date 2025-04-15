@@ -588,9 +588,6 @@ const processBookingRefund = async (req, res) => {
             try {
                 // Get charge details from Stripe
                 const chargeDetails = await getChargeDetails(payment.stripe_payment_id);
-
-        
-                // Use database amount if Stripe details are not available
                 const refundableAmount = chargeDetails ? chargeDetails.amountRefundable : parseFloat(payment.refundable_amount);
         
                

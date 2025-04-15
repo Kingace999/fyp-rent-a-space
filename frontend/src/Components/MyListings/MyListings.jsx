@@ -809,7 +809,8 @@ const handleSave = async () => {
                         {currentListing.images.map((imagePath, index) => (
                           <div key={index} className="image-preview relative flex items-center bg-gray-50 p-2 rounded">
                             <img
-                              src={`${process.env.REACT_APP_API_URL}${listing.images[0]}`}
+                              
+                              src={`${process.env.REACT_APP_API_URL}${imagePath}`}
 
                               alt={`Listing ${index + 1}`}
                               style={{ maxWidth: '100px', maxHeight: '100px', width: 'auto', height: 'auto' }}
