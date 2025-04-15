@@ -3,9 +3,20 @@ const path = require('path');
 const fs = require('fs');
 
 // Initialize Vision API client
-const client = new vision.ImageAnnotatorClient({
+let client;
+try {
+  // Try to parse the credentials as JSON
+  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  client = new vision.ImageAnnotatorClient({ credentials });
+  console.log('Successfully initialized Vision client with JSON credentials');
+} catch (error) {
+  console.error('Error parsing credentials:', error);
+  // Fallback to file path approach (for local development)
+  client = new vision.ImageAnnotatorClient({
     keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-});
+  });
+  console.log('Initialized Vision client with credential file path');
+}
 
 // Controller function to analyze space images
 const analyzeSpace = async (req, res) => {
